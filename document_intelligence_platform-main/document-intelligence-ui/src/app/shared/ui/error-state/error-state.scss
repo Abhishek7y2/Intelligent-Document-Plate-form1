@@ -1,0 +1,90 @@
+.error-state {
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 24px;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #fee2e2;
+  border-radius: 12px;
+  margin: 16px 0;
+
+  &.variant-permission-denied {
+    border-color: #fde68a;
+    .error-icon {
+      background: #fffbe completed;
+      background: #fef3c7;
+      color: #d97706;
+    }
+  }
+
+  &.variant-not-found,
+  &.variant-deleted-or-purged {
+    border-color: #e2e8f0;
+    .error-icon {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+  }
+
+  &.variant-processing {
+    border-color: #c7d2fe;
+    .error-icon {
+      background: #eef2ff;
+      color: #4f46e5;
+    }
+  }
+}
+
+.error-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.error-content {
+  h3 {
+    margin: 0 0 6px;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  p {
+    max-width: 440px;
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+.retry-button {
+  margin-top: 20px;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: #4f46e5;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+  }
+}

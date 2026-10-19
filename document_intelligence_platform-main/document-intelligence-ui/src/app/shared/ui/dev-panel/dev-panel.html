@@ -1,0 +1,80 @@
+<div *ngIf="mockSettings.isDevMode" class="dev-panel-wrapper">
+  <button
+    type="button"
+    class="dev-panel-toggle"
+    (click)="togglePanel()"
+    aria-label="Toggle Dev Mock Settings"
+    title="Developer Mock Controls"
+  >
+    ⚙ Dev Mock Tooling
+    <span *ngIf="mockSettings.failNext()" class="pill-badge danger">Fail Next Active</span>
+  </button>
+
+  <div *ngIf="isOpen" class="dev-panel-card" role="dialog" aria-modal="false" aria-label="Dev Settings">
+    <div class="panel-header">
+      <h3>🛠️ Mock API Controls</h3>
+      <button class="close-btn" (click)="togglePanel()" aria-label="Close Dev Panel">×</button>
+    </div>
+
+    <div class="panel-body">
+      <!-- Fail Next Toggle -->
+      <div class="control-group">
+        <label class="toggle-label">
+          <span>Fail Next Request (500 Error):</span>
+          <button
+            type="button"
+            class="btn-switch"
+            [class.active]="mockSettings.failNext()"
+            (click)="toggleFailNext()"
+          >
+            {{ mockSettings.failNext() ? 'ON (Next Fails)' : 'OFF' }}
+          </button>
+        </label>
+      </div>
+
+      <!-- Failure Rate Slider -->
+      <div class="control-group">
+        <label>Random Failure Rate: <strong>{{ mockSettings.failureRate() }}%</strong></label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="10"
+          [ngModel]="mockSettings.failureRate()"
+          (ngModelChange)="updateFailureRate($event)"
+        />
+      </div>
+
+      <!-- Latency Controls -->
+      <div class="control-group">
+        <label>Simulated Latency Range:</label>
+        <div class="preset-buttons">
+          <button
+            type="button"
+            class="btn-preset"
+            [class.active]="mockSettings.latencyMinMs() === 100"
+            (click)="updateLatency(100, 300)"
+          >
+            Fast (100-300ms)
+          </button>
+          <button
+            type="button"
+            class="btn-preset"
+            [class.active]="mockSettings.latencyMinMs() === 300"
+            (click)="updateLatency(300, 700)"
+          >
+            Normal (300-700ms)
+          </button>
+          <button
+            type="button"
+            class="btn-preset"
+            [class.active]="mockSettings.latencyMinMs() === 1500"
+            (click)="updateLatency(1500, 3000)"
+          >
+            Slow (1.5-3s)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

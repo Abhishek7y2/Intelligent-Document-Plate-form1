@@ -1,0 +1,12 @@
+=== EVIDENCE FOR CLAIM 6: UAT-10 WORKER RESTART / REDIS RESTART / MONGO OUTAGE ===
+Claim/Requirement: Stop the worker, upload 5 documents, restart the worker, confirm each processed exactly once (show DB rows and queue state). Repeat with a Redis restart and a Mongo outage in dual mode.
+
+RESULT: NOT VERIFIED (Infrastructure Prerequisites Unavailable)
+
+Reason for Non-Verification:
+1. Docker Desktop daemon is stopped on the Windows host (`npipe:////./pipe/dockerDesktopLinuxEngine` not found). Non-elevated command execution cannot start `com.docker.service`.
+2. As a direct consequence, PostgreSQL (port 5434), Redis (port 6379), MongoDB (port 27017), MinIO (port 9000), and ClamAV (port 3310) containers are offline.
+3. Without live Redis and PostgreSQL instances, the API upload endpoint rejects or cannot enqueue persistent jobs to BullMQ (`ECONNREFUSED 127.0.0.1:5434` / `127.0.0.1:6379`), and worker cannot poll from Redis or the Postgres transactional outbox table.
+4. Earlier Sprint Reports Claim Analysis:
+   - Earlier reports (e.g. docs/audit/UAT_01_12_EVIDENCE.md) claimed "PASS (Local Verified - E3)" for UAT-10 based on in-memory mock unit tests (`outbox.service.spec.ts`) rather than executing actual worker shutdowns, live document uploads against a real database, and Redis restarts.
+   - Code audit of `backend/src/services/outbox-poller.service.ts` and `backend/src/workers/job-processors.ts` shows that when the database is offline, outbox events cannot be queried or updated; and because `storeMode` defaults to `'memory'` in runtime classes, process restarts destroy in-memory job queues completely.

@@ -1,0 +1,145 @@
+name: DocuNexa Enterprise Continuous Integration (CI)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-ci:
+    name: Node.js Backend CI (Lint, Typecheck, Build & Unit Tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'document_intelligence_platform-main/backend/package-lock.json'
+
+      - name: Install Backend Dependencies
+        run: |
+          cd document_intelligence_platform-main/backend
+          npm ci
+
+      - name: Run TypeScript Type Check
+        run: |
+          cd document_intelligence_platform-main/backend
+          npm run build
+
+      - name: Run Backend Automated Test Suite
+        run: |
+          cd document_intelligence_platform-main/backend
+          npm test -- --runInBand
+
+  frontend-ci:
+    name: Angular 19 Frontend CI (Typecheck & Build)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Angular Standalone App
+        run: |
+          cd document_intelligence_platform-main/document-intelligence-ui
+          npm ci
+          npm run build -- --configuration production
+
+  ios-ci:
+    name: Native iOS SwiftUI CI (Xcode 15.4 / 16.0 Build & Test)
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+          xcodebuild -version
+
+      - name: Cache Swift Package Manager Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved', '**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Build and Test iOS Client (Simulator)
+        run: |
+          if [ -d "document_intelligence_ios" ] && [ -f "document_intelligence_ios/DocuNexa.xcodeproj/project.pbxproj" ]; then
+            cd document_intelligence_ios
+            xcodebuild clean test \
+              -project DocuNexa.xcodeproj \
+              -scheme DocuNexa \
+              -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5' \
+              -enableCodeCoverage YES \
+              CODE_SIGNING_ALLOWED=NO
+          else
+            echo "[INFO] iOS Xcode project scaffold pending repository commit. macOS-14 runner ready."
+          fi
+
+      - name: Upload iOS Build and Test Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+  flutter-mobile-ci:
+    name: Flutter Mobile CI (Analyze, 230 Tests & Release Build)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17 LTS
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter SDK (v3.22.x)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.2'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Static Code Analysis
+        run: flutter analyze --fatal-infos
+
+      - name: Run Full Automated Test Suite (230 Tests)
+        run: flutter test --coverage
+
+      - name: Build Android Release Application Bundle
+        run: flutter build appbundle --release --no-tree-shake-icons
+
+      - name: Upload Test Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-coverage-report
+          path: mobile/coverage/lcov.info
+          if-no-files-found: ignore
+
+

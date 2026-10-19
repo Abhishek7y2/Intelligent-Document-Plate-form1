@@ -1,0 +1,3 @@
+$ npm audit (document-intelligence-ui)
+found 0 vulnerabilities
+Exit code: 0

@@ -1,0 +1,7 @@
+$ npm run build
+
+> docunexa-backend@1.0.0 build
+> tsc
+
+Exit code: 0
+Output: Clean compilation into dist/

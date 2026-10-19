@@ -1,0 +1,35 @@
+<div
+  *ngIf="idleTimerService.isWarningVisible()"
+  class="modal-backdrop"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="session-modal-title"
+  aria-describedby="session-modal-desc"
+>
+  <div class="modal-card">
+    <div class="modal-icon" aria-hidden="true">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+    </div>
+
+    <h2 id="session-modal-title">Session Expiring Soon</h2>
+    <p id="session-modal-desc">
+      You have been idle for a while. For security reasons, your enterprise session will automatically log out in:
+    </p>
+
+    <div class="countdown-badge">
+      <span>{{ idleTimerService.secondsRemaining() }} seconds</span>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-primary" (click)="staySignedIn()" aria-label="Stay signed in">
+        Stay Signed In
+      </button>
+      <button class="btn-secondary" (click)="signOut()" aria-label="Sign out now">
+        Sign Out Now
+      </button>
+    </div>
+  </div>
+</div>

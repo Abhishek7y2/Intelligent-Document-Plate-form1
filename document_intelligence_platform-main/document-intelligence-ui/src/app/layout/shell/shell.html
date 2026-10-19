@@ -1,0 +1,39 @@
+<div class="app-shell">
+  @if (isOffline()) {
+    <div class="offline-banner" role="alert">
+      <div class="banner-content">
+        <span class="banner-icon">⚡</span>
+        <div>
+          <strong>Working Offline</strong>
+          <span>You are currently disconnected from the network. API operations may fail until connectivity is restored.</span>
+        </div>
+      </div>
+      <button type="button" class="banner-retry-button" (click)="checkConnectivity()">
+        Re-check Connection
+      </button>
+    </div>
+  }
+
+  <div class="shell-body">
+    <!-- Edge hover sensor: moving cursor to left edge triggers slidebar -->
+    <div
+      class="left-edge-sensor"
+      (mouseenter)="uiState.openSidebar()"
+      aria-hidden="true"
+    ></div>
+
+    <app-sidebar></app-sidebar>
+
+    <div class="main-area" [class.sidebar-pinned]="uiState.sidebarPinned()">
+      <app-topbar></app-topbar>
+
+      <main class="page-content">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
+  </div>
+  
+  <app-session-warning-modal></app-session-warning-modal>
+  <app-dev-panel></app-dev-panel>
+  <app-notification-center></app-notification-center>
+</div>

@@ -1,0 +1,97 @@
+<div class="accept-invite-container">
+  <div class="auth-card">
+    <div class="card-brand">
+      <div class="brand-logo">DN</div>
+      <h1>DocuNexa Intelligence</h1>
+      <span class="brand-tag">Enterprise Document Intelligence Platform</span>
+    </div>
+
+    @if (isSuccess()) {
+      <div class="success-view" role="status">
+        <div class="success-icon">✓</div>
+        <h2>Invitation Accepted!</h2>
+        <p>Your enterprise user account has been successfully configured and activated.</p>
+        <a routerLink="/login" class="btn-primary-link">Proceed to Sign In ›</a>
+      </div>
+    } @else {
+      <div class="form-header">
+        <h2>Accept Organization Invitation</h2>
+        <p>Set your full name and create a secure enterprise password to join your team workspace.</p>
+      </div>
+
+      @if (errorMessage()) {
+        <div class="error-banner" role="alert">
+          <span class="icon">⚠️</span>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <form (ngSubmit)="submitAcceptInvite()" class="invite-form">
+        <div class="form-group">
+          <label for="inviteeName">Full Legal Name</label>
+          <input
+            id="inviteeName"
+            type="text"
+            [(ngModel)]="name"
+            name="name"
+            placeholder="e.g. Vikramaditya Singhania"
+            required
+            class="input-control"
+          />
+        </div>
+
+        <div class="form-group">
+          <div class="label-row">
+            <label for="inviteePassword">New Secure Password</label>
+            <button type="button" class="btn-toggle-pwd" (click)="togglePassword()">
+              {{ showPassword ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          <input
+            id="inviteePassword"
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="password"
+            name="password"
+            (input)="validatePasswordPolicy()"
+            placeholder="Min 12 chars (upper, lower, num, symbol)"
+            required
+            class="input-control"
+          />
+        </div>
+
+        @if (passwordPolicyErrors().length > 0 && password.length > 0) {
+          <div class="password-policy-card">
+            <span class="policy-title">Password Requirements:</span>
+            <ul>
+              @for (err of passwordPolicyErrors(); track err) {
+                <li>{{ err }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <div class="form-group">
+          <label for="inviteeConfirmPassword">Confirm Password</label>
+          <input
+            id="inviteeConfirmPassword"
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="confirmPassword"
+            name="confirmPassword"
+            placeholder="Repeat password"
+            required
+            class="input-control"
+          />
+        </div>
+
+        <button type="submit" class="btn-submit" [disabled]="isLoading()">
+          {{ isLoading() ? 'Configuring Account...' : 'Set Password & Activate Account' }}
+        </button>
+      </form>
+
+      <div class="form-footer">
+        <span>Already have an active account?</span>
+        <a routerLink="/login" class="link-signin">Sign In</a>
+      </div>
+    }
+  </div>
+</div>

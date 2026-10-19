@@ -1,0 +1,123 @@
+version: '3.8'
+
+# DocuNexa Isolated Sandbox Stack: PostgreSQL 16 + pgvector, MinIO Object Storage, and ClamAV Scanner
+# Binds strictly to localhost ports:
+#   PostgreSQL: localhost:5434
+#   MinIO API:  localhost:9000
+#   MinIO Web:  localhost:9001
+#   ClamAV:     localhost:3310
+
+services:
+  docunexa-postgres-16-sandbox:
+    image: pgvector/pgvector:0.7.4-pg16
+    container_name: docunexa-postgres-16-sandbox
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5434:5432"
+    environment:
+      POSTGRES_DB: docunexa_sandbox
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "${SANDBOX_POSTGRES_PASSWORD:?Set SANDBOX_POSTGRES_PASSWORD in .env.sandbox}"
+      SANDBOX_APP_PASSWORD: "${SANDBOX_APP_PASSWORD:?Set SANDBOX_APP_PASSWORD in .env.sandbox}"
+    volumes:
+      - docunexa_pg16_sandbox_data:/var/lib/postgresql/data
+      - ./docker/sandbox-init.sh:/docker-entrypoint-initdb.d/01-init-sandbox.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d docunexa_sandbox"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  docunexa-minio:
+    image: minio/minio:RELEASE.2024-05-10T01-41-38Z
+    container_name: docunexa-minio-sandbox
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:-docunexa_minio_admin}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.sandbox}"
+    command: server /data --console-address ":9001"
+    volumes:
+      - docunexa_minio_sandbox_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  docunexa-minio-init:
+    image: minio/mc:latest
+    container_name: docunexa-minio-init
+    depends_on:
+      docunexa-minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:-docunexa_minio_admin}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.sandbox}"
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set localminio http://docunexa-minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
+      /usr/bin/mc mb localminio/docunexa-documents --ignore-existing;
+      /usr/bin/mc anonymous set download localminio/docunexa-documents/public || true;
+      echo '[DOCUNEXA MINIO INIT] Bucket docunexa-documents initialized.';
+      exit 0;
+      "
+
+  docunexa-clamav:
+    image: clamav/clamav:latest
+    container_name: docunexa-clamav-sandbox
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3310:3310"
+    volumes:
+      - docunexa_clamav_sandbox_db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --ping 5 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  docunexa-redis:
+    image: redis:7.2-alpine
+    container_name: docunexa-redis-sandbox
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - docunexa_redis_sandbox_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  docunexa-mongo:
+    image: mongo:7
+    container_name: docunexa-mongo-sandbox
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: docunexa
+    volumes:
+      - docunexa_mongo_sandbox_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  docunexa_pg16_sandbox_data:
+    name: docunexa_pg16_sandbox_data
+  docunexa_minio_sandbox_data:
+    name: docunexa_minio_sandbox_data
+  docunexa_clamav_sandbox_db:
+    name: docunexa_clamav_sandbox_db
+  docunexa_redis_sandbox_data:
+    name: docunexa_redis_sandbox_data
+  docunexa_mongo_sandbox_data:
+    name: docunexa_mongo_sandbox_data

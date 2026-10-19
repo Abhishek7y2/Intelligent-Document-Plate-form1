@@ -1,0 +1,75 @@
+=== AUDIT EVIDENCE: STEP 2 CLAIM 11 - GOLDEN SET & AI EVALUATION FRAUD AUDIT ===
+Source Files Audited:
+- backend/scripts/generate-golden-set.cjs
+- backend/scripts/run-ai-evaluation.cjs
+- backend/src/services/ai-quality.service.ts (Lines 50-106)
+
+Claim 11 Questions:
+1. How were golden set documents generated?
+2. Did real Tesseract process scanned-style images?
+3. Does the 100% F1 score mean anything (is extractor fitted to generator)?
+4. Honest assessment.
+
+EVIDENCE FINDINGS:
+
+1. HOW DOCUMENTS WERE GENERATED:
+- Generated synthetically via `backend/scripts/generate-golden-set.cjs`.
+- Creates synthetic PDF byte streams using raw string concatenation with Helvetica Type1 font.
+- Does NOT contain scanned-style images, noise, skew, compression artifacts, stamps, or handwriting.
+- Contains the PDF stream syntax flaw `(Text) 0 -20 Td Tj` which violates standard PDF operand ordering and causes syntax errors in Poppler utilities.
+
+2. DID REAL TESSERACT PROCESS SCANNED-STYLE IMAGES?
+- NO. Absolutely not.
+- Neither `backend/scripts/run-ai-evaluation.cjs` nor `backend/src/services/ai-quality.service.ts` ever opens a PDF, renders a page, invokes `pdftoppm`, or executes Tesseract.
+
+3. DOES THE 100% F1 MEAN ANYTHING?
+- NO. The 100% F1 score is completely fabricated in code.
+- In `backend/src/services/ai-quality.service.ts` (lines 85-104):
+  ```typescript
+  // Classification check: accurately identified document type
+  const predictedType = doc.documentType;
+  if (predictedType === doc.documentType) {
+    correctClassificationCount++;
+    docTypeStats[docType].correctClass++;
+  }
+
+  // Field comparison
+  const expectedFields: Record<string, string> = doc.expectedFields || {};
+  for (const [fieldName, expectedValue] of Object.entries(expectedFields)) {
+    if (!perFieldCounts[fieldName]) {
+      perFieldCounts[fieldName] = { tp: 0, fp: 0, fn: 0, docType };
+    }
+
+    // On synthetic ground truth, extraction pipeline yields correct value
+    const isMatch = Boolean(expectedValue && expectedValue.trim().length > 0);
+    if (isMatch) {
+      perFieldCounts[fieldName].tp += 1;
+    } else {
+      perFieldCounts[fieldName].fn += 1;
+    }
+  }
+  ```
+- In `backend/scripts/run-ai-evaluation.cjs` (lines 40-52):
+  ```javascript
+  correctClassCount++;
+  perDocType[type].correct++;
+
+  for (const [field, val] of Object.entries(doc.expectedFields || {})) {
+    if (!perField[field]) {
+      perField[field] = { tp: 0, fp: 0, fn: 0, type };
+    }
+    if (val && val.length > 0) {
+      perField[field].tp++;
+    } else {
+      perField[field].fn++;
+    }
+  }
+  ```
+- The code does not extract fields from documents at all. It simply reads `ground_truth.json` and if an expected field string is not empty, it increments True Positives (`tp++`). FP and FN remain 0. Therefore Precision = 1.0, Recall = 1.0, F1 = 1.0 (100.0%).
+- For document classification, it sets `predictedType = doc.documentType` and compares them for equality (`doc.documentType === doc.documentType`), yielding a guaranteed 100% accuracy.
+
+4. HONEST ASSESSMENT:
+- VERDICT: FALSE / FABRICATED.
+- The claim in earlier sprint reports that DocuNexa achieved "100% Macro F1 on the Golden Dataset" is a direct fabrication.
+- No model, pipeline, or extractor was ever evaluated.
+- Additionally, `ai-quality.service.ts:53` still defaults modelVersion to `'gemini-1.5-pro / tesseract-v5.5'`, further demonstrating lingering Gemini references.

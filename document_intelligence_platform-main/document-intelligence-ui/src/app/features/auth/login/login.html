@@ -1,0 +1,416 @@
+<div class="auth-split-wrapper">
+  <!-- LEFT VISUAL SIDE (Hero Showcase) -->
+  <div class="visual-side">
+    <div class="visual-brand">
+      <img src="/docnexa-logo.png" alt="DocNexa — Document Intelligence" class="hero-brand-logo">
+    </div>
+
+    <div class="visual-content">
+      <span class="visual-eyebrow">AI · POWERED DOCUMENT INTELLIGENCE</span>
+      <h1 class="visual-heading">Transform Your Document <span class="highlight-purple">Processing</span> Pipeline</h1>
+      <p class="visual-description">
+        Automate intake, OCR scanning, AI classification, key-value extraction, and multi-tier approval workflows with enterprise security.
+      </p>
+
+      <!-- Hero Showcase Card -->
+      <div class="showcase-card">
+        <div class="showcase-header">
+          <span class="status-dot"></span>
+          <span class="showcase-tag">LIVE PROCESSING PIPELINE</span>
+        </div>
+
+        <div class="showcase-body">
+          <div class="pipeline-item active">
+            <div class="item-icon">📄</div>
+            <div class="item-info">
+              <strong>Supplier_Master_Agreement_2026.pdf</strong>
+              <span>Supplier Contract · 4.8 MB · Ingestion Complete</span>
+            </div>
+            <span class="badge badge-success">98.4% Confidence</span>
+          </div>
+
+          <div class="pipeline-stats">
+            <div class="stat-box">
+              <span class="stat-val">1,248</span>
+              <span class="stat-lbl">Processed Docs</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-val">96.4%</span>
+              <span class="stat-lbl">OCR Accuracy</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-val">24</span>
+              <span class="stat-lbl">Review Queue</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="visual-footer">
+      <span>© 2026 DocNexa Inc. All rights reserved.</span>
+      <div class="footer-links">
+        <a href="javascript:void(0)">Privacy Policy</a>
+        <a href="javascript:void(0)">Security</a>
+        <a href="javascript:void(0)">Support</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT AUTH SIDE (Sign-in Form Card) -->
+  <div class="auth-side">
+    <div class="auth-card">
+      
+      <!-- OFFLINE BANNER -->
+      <div *ngIf="isOffline" class="banner-offline" role="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="1" y1="1" x2="23" y2="23"/>
+          <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+          <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+        </svg>
+        <span>You are currently offline. Check your network connection.</span>
+      </div>
+
+      <!-- LOCKOUT BANNER -->
+      <div *ngIf="isLockedOut" class="banner-lockout" role="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <span>Account locked due to 5 failed login attempts. Retry in <strong>{{ lockoutSecondsLeft }}s</strong></span>
+      </div>
+
+      <div class="card-header">
+        <div class="card-brand-tag">
+          <img src="/docnexa-icon-transparent.png" alt="DocNexa" class="card-brand-icon">
+          <span class="card-brand-title">DocNexa</span>
+        </div>
+        <span class="eyebrow-tag">SECURE WORKSPACE</span>
+        <h2 class="card-title">Sign in</h2>
+        <p class="card-subtitle">
+          Welcome back! Select a demo role pill or enter your enterprise credentials.
+        </p>
+
+        <!-- SMTP GATEWAY STATUS PILL -->
+        <div class="smtp-status-badge" [class.connected]="smtpStatus?.configured">
+          <span class="smtp-dot"></span>
+          <span class="smtp-text">
+            SMTP Mailer: <strong>{{ smtpStatus?.host || '127.0.0.1' }}:{{ smtpStatus?.port || 587 }}</strong> · Active
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Role Selector Pills (BRD Section 3 Alignment) -->
+      <div class="role-selector">
+        <span class="selector-label">QUICK ROLE ACCESS (8 ROLES):</span>
+        <div class="role-pills-grid">
+          <button
+            *ngFor="let role of demoRoles"
+            type="button"
+            class="pill-btn"
+            [class.active]="email === role.demoEmail"
+            (click)="selectRole(role.demoEmail)"
+            [disabled]="isLockedOut"
+            [attr.aria-label]="'Log in as ' + role.name"
+          >
+            <span class="pill-name">{{ role.name }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- AUTHENTICATION MODE TABS -->
+      <div class="auth-mode-tabs" role="tablist">
+        <button
+          type="button"
+          class="mode-tab-btn"
+          [class.active]="authMode === 'password'"
+          (click)="setAuthMode('password')"
+          role="tab"
+          [attr.aria-selected]="authMode === 'password'"
+        >
+          🔑 Password Login
+        </button>
+        <button
+          type="button"
+          class="mode-tab-btn"
+          [class.active]="authMode === 'otp'"
+          (click)="setAuthMode('otp')"
+          role="tab"
+          [attr.aria-selected]="authMode === 'otp'"
+        >
+          ✉️ Email OTP (SMTP)
+        </button>
+      </div>
+
+      <!-- PASSWORD LOGIN FORM -->
+      <form *ngIf="authMode === 'password'" (ngSubmit)="login()" novalidate class="auth-form">
+        <!-- EMAIL FIELD -->
+        <div class="form-group">
+          <label for="workEmail">Work Email</label>
+          <div
+            class="input-wrapper"
+            [class.has-error]="emailError && (emailTouched || isSubmitted)"
+            [class.is-valid]="emailValid && emailTouched && !emailError"
+          >
+            <span class="input-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="20" height="16" x="2" y="4" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+            </span>
+            <input
+              id="workEmail"
+              type="email"
+              name="email"
+              [(ngModel)]="email"
+              (input)="onEmailChange()"
+              (blur)="onEmailBlur()"
+              [disabled]="isLockedOut"
+              [attr.aria-invalid]="emailError && (emailTouched || isSubmitted) ? 'true' : 'false'"
+              placeholder="you@company.com"
+              autocomplete="email"
+              maxlength="254"
+              spellcheck="false"
+            />
+            <span *ngIf="emailValid && emailTouched && !emailError" class="valid-icon" aria-hidden="true">✓</span>
+          </div>
+          <div *ngIf="emailError && (emailTouched || isSubmitted)" class="field-error" role="alert">
+            <span>{{ emailError }}</span>
+          </div>
+        </div>
+
+        <!-- PASSWORD FIELD -->
+        <div class="form-group">
+          <div class="label-row">
+            <label for="accountPassword">Password</label>
+            <a [routerLink]="['/verify-email']" [queryParams]="email ? { email: email } : null" class="forgot-link">Forgot password?</a>
+          </div>
+          <div
+            class="input-wrapper"
+            [class.has-error]="passwordError && (passwordTouched || isSubmitted)"
+            [class.is-valid]="passwordValid && passwordTouched && !passwordError"
+          >
+            <span class="input-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </span>
+            <input
+              id="accountPassword"
+              [type]="showPassword ? 'text' : 'password'"
+              name="password"
+              [(ngModel)]="password"
+              (input)="onPasswordChange()"
+              (blur)="onPasswordBlur()"
+              [disabled]="isLockedOut"
+              [attr.aria-invalid]="passwordError && (passwordTouched || isSubmitted) ? 'true' : 'false'"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              maxlength="128"
+            />
+            <button
+              type="button"
+              class="toggle-pass"
+              (click)="togglePassword()"
+              [attr.aria-pressed]="showPassword"
+              [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+            >
+              {{ showPassword ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          <div *ngIf="passwordError && (passwordTouched || isSubmitted)" class="field-error" role="alert">
+            <span>{{ passwordError }}</span>
+          </div>
+        </div>
+
+        <!-- D.3: MFA STEP (TOTP CODE OR RECOVERY CODE) -->
+        <div *ngIf="mfaRequired" class="form-group mfa-step-block">
+          <div class="mfa-info-banner">
+            <span class="mfa-shield">🛡️</span>
+            <div>
+              <strong>Two-Factor Authentication Required</strong>
+              <p>Enter your 6-digit TOTP authenticator code or 8-character recovery code.</p>
+            </div>
+          </div>
+          <div class="label-row">
+            <label for="mfaVerificationCode">MFA Passcode / Recovery Code</label>
+            <button type="button" class="btn-cancel-mfa" (click)="cancelMfa()">Change Password</button>
+          </div>
+          <div class="input-wrapper">
+            <span class="input-icon" aria-hidden="true">🔑</span>
+            <input
+              id="mfaVerificationCode"
+              type="text"
+              name="mfaCode"
+              [(ngModel)]="mfaCode"
+              placeholder="e.g. 123456 or a1b2c3d4"
+              autocomplete="one-time-code"
+              maxlength="16"
+              class="mfa-code-input"
+            />
+          </div>
+        </div>
+
+        <!-- REMEMBER ME -->
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="rememberMe"
+              name="rememberMe"
+              [disabled]="isLockedOut"
+            />
+            <span>Remember me for 30 days</span>
+          </label>
+        </div>
+
+        <!-- SERVER / GENERIC AUTH ERROR ALERT -->
+        <div *ngIf="errorMessage && !isLockedOut" class="alert-error" role="alert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>{{ errorMessage }}</span>
+        </div>
+
+        <!-- SUBMIT BUTTON -->
+        <button
+          type="submit"
+          class="btn-submit"
+          [disabled]="isLoading || isLockedOut || isOffline"
+        >
+          <span *ngIf="isLoading" class="spinner" aria-hidden="true"></span>
+          <span>{{ isLoading ? 'Authenticating...' : 'Sign in to Workspace' }}</span>
+        </button>
+
+        <div class="sso-divider">
+          <span>OR ENTERPRISE SSO</span>
+        </div>
+
+        <button
+          type="button"
+          class="btn-sso"
+          (click)="loginWithSso()"
+          [disabled]="isLockedOut"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Sign in with Enterprise SAML / Okta SSO</span>
+        </button>
+      </form>
+
+      <!-- EMAIL OTP (SMTP) LOGIN FORM -->
+      <form *ngIf="authMode === 'otp'" (ngSubmit)="verifyOtpAndLogin()" novalidate class="auth-form">
+        <!-- EMAIL FIELD -->
+        <div class="form-group">
+          <label for="otpEmail">Registered Work Email</label>
+          <div
+            class="input-wrapper"
+            [class.has-error]="emailError && emailTouched"
+            [class.is-valid]="emailValid && emailTouched && !emailError"
+          >
+            <span class="input-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="20" height="16" x="2" y="4" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+            </span>
+            <input
+              id="otpEmail"
+              type="email"
+              name="email"
+              [(ngModel)]="email"
+              (input)="onEmailChange()"
+              (blur)="onEmailBlur()"
+              [disabled]="isLockedOut || otpSending"
+              placeholder="you@company.com"
+              autocomplete="email"
+              maxlength="254"
+              spellcheck="false"
+            />
+            <span *ngIf="emailValid && emailTouched && !emailError" class="valid-icon" aria-hidden="true">✓</span>
+          </div>
+          <div *ngIf="emailError && emailTouched" class="field-error" role="alert">
+            <span>{{ emailError }}</span>
+          </div>
+        </div>
+
+        <!-- SEND OTP BUTTON IF NOT SENT YET -->
+        <button
+          *ngIf="!otpSent"
+          type="button"
+          class="btn-submit"
+          (click)="requestEmailOtp()"
+          [disabled]="otpSending || isLockedOut || isOffline || !email"
+        >
+          <span *ngIf="otpSending" class="spinner" aria-hidden="true"></span>
+          <span>{{ otpSending ? 'Sending Passcode via SMTP...' : 'Send Verification Code via SMTP' }}</span>
+        </button>
+
+        <!-- SUCCESS OTP SENT BANNER -->
+        <div *ngIf="otpSuccessMessage" class="alert-success" role="status">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span>{{ otpSuccessMessage }}</span>
+        </div>
+
+        <!-- OTP 6-DIGIT CODE INPUT FIELD -->
+        <div *ngIf="otpSent" class="form-group">
+          <div class="label-row">
+            <label for="otpCodeInput">6-Digit Passcode</label>
+            <button type="button" class="forgot-link" style="border:none;background:none;cursor:pointer;" (click)="requestEmailOtp()" [disabled]="otpSending">
+              Resend Code
+            </button>
+          </div>
+          <div class="input-wrapper">
+            <span class="input-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </span>
+            <input
+              id="otpCodeInput"
+              type="text"
+              name="otpCode"
+              [(ngModel)]="otpCode"
+              placeholder="e.g. 742918"
+              maxlength="6"
+              autocomplete="one-time-code"
+              style="letter-spacing: 4px; font-weight: 700; font-size: 16px;"
+            />
+          </div>
+        </div>
+
+        <!-- SERVER / GENERIC AUTH ERROR ALERT -->
+        <div *ngIf="errorMessage && !isLockedOut" class="alert-error" role="alert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>{{ errorMessage }}</span>
+        </div>
+
+        <!-- VERIFY & SIGN IN BUTTON -->
+        <button
+          *ngIf="otpSent"
+          type="submit"
+          class="btn-submit"
+          [disabled]="isLoading || isLockedOut || isOffline || !otpCode"
+        >
+          <span *ngIf="isLoading" class="spinner" aria-hidden="true"></span>
+          <span>{{ isLoading ? 'Verifying Passcode...' : 'Verify Passcode & Enter Workspace' }}</span>
+        </button>
+      </form>
+
+      <div class="security-badge">
+        <span class="lock-icon" aria-hidden="true">🔒</span>
+        <span>256-Bit SSL Encryption · SOC2 Type II Certified</span>
+      </div>
+    </div>
+  </div>
+</div>

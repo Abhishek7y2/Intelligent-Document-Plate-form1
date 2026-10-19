@@ -1,0 +1,87 @@
+{
+  "profile": "smoke",
+  "description": "1-2 Virtual Users, validating connectivity, authentication, health checks, and assertions",
+  "concurrency": 2,
+  "durationSeconds": 10.1,
+  "totalRequests": 173,
+  "successfulRequests": 173,
+  "errorCount": 0,
+  "errorRate": 0,
+  "throughputRps": 17.2,
+  "statusCodes": {
+    "200": 173
+  },
+  "overallLatencies": {
+    "count": 173,
+    "min": 1.71,
+    "max": 90.27,
+    "mean": 5.65,
+    "p50": 4.35,
+    "p90": 8.69,
+    "p95": 12.56,
+    "p99": 24.88
+  },
+  "transactionBreakdown": {
+    "GET /health": {
+      "count": 29,
+      "min": 1.71,
+      "max": 22.34,
+      "mean": 3.89,
+      "p50": 2.19,
+      "p90": 6.8,
+      "p95": 18.32,
+      "p99": 22.34
+    },
+    "GET /ready": {
+      "count": 29,
+      "min": 3.69,
+      "max": 90.27,
+      "mean": 9.97,
+      "p50": 4.69,
+      "p90": 22.61,
+      "p95": 24.88,
+      "p99": 90.27
+    },
+    "GET /search (Metadata & Text)": {
+      "count": 29,
+      "min": 3.47,
+      "max": 12.56,
+      "mean": 5.14,
+      "p50": 4.42,
+      "p90": 8.86,
+      "p95": 9.64,
+      "p99": 12.56
+    },
+    "GET /documents/:id": {
+      "count": 29,
+      "min": 3.23,
+      "max": 9.4,
+      "mean": 4.75,
+      "p50": 4.4,
+      "p90": 6.11,
+      "p95": 8.69,
+      "p99": 9.4
+    },
+    "GET /compare?doc1=DOC-10245&doc2=v2": {
+      "count": 29,
+      "min": 3.97,
+      "max": 16.91,
+      "mean": 5.38,
+      "p50": 4.63,
+      "p90": 6.75,
+      "p95": 8.63,
+      "p99": 16.91
+    },
+    "GET /review/queue": {
+      "count": 28,
+      "min": 3.17,
+      "max": 10.1,
+      "mean": 4.77,
+      "p50": 4.06,
+      "p90": 9.25,
+      "p95": 9.87,
+      "p99": 10.1
+    }
+  },
+  "timestamp": "2026-10-14T05:06:10.776Z"
+}

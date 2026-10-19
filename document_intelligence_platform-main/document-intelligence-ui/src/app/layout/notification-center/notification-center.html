@@ -1,0 +1,239 @@
+@if (notificationService.isDrawerOpen()) {
+  <div class="notification-backdrop" (click)="closeDrawer()">
+    <aside
+      class="notification-drawer"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="notif-drawer-title"
+    >
+      
+      <!-- DRAWER HEADER -->
+      <div class="drawer-header">
+        <div class="header-title-row">
+          <div class="title-with-badge">
+            <h2 id="notif-drawer-title">Notifications</h2>
+            @if (notificationService.unreadCount() > 0) {
+              <span class="unread-pill" [attr.aria-label]="notificationService.unreadCount() + ' unread notifications'">
+                {{ notificationService.unreadCount() }} unread
+              </span>
+            }
+          </div>
+          <button type="button" class="btn-close" (click)="closeDrawer()" aria-label="Close notifications drawer">
+            ×
+          </button>
+        </div>
+
+        <div class="header-actions-row">
+          <button
+            type="button"
+            class="btn-text-action"
+            [disabled]="notificationService.unreadCount() === 0"
+            (click)="markAllAsRead()"
+            aria-label="Mark all notifications as read"
+          >
+            ✓ Mark all as read
+          </button>
+
+          <button
+            type="button"
+            class="btn-text-action"
+            (click)="togglePreferences()"
+            aria-label="Toggle notification delivery preferences"
+          >
+            <span>⚙</span> {{ showPreferences() ? 'Hide Preferences' : 'Notification Preferences' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- PREFERENCES PANEL OVERLAY (Collapsible) -->
+      @if (showPreferences()) {
+        <div class="preferences-panel">
+          <div class="panel-title">
+            <strong>Notification Delivery Channels (BRD FR-020)</strong>
+            <span>Manage how you receive alerts per event type</span>
+          </div>
+
+          <div class="pref-list">
+            @for (pref of notificationService.preferences(); track pref.type) {
+              <div class="pref-row">
+                <div class="pref-label-group">
+                  <span class="pref-label">{{ pref.label }}</span>
+                  @if (pref.requiredInApp) {
+                    <span class="required-tag" title="In-App alert is mandatory for this critical event">Required</span>
+                  }
+                </div>
+                <div class="pref-toggles">
+                  <label class="toggle-chip" [class.active]="pref.email">
+                    <input
+                      type="checkbox"
+                      [checked]="pref.email"
+                      (change)="toggleEmailPref(pref)"
+                    />
+                    <span>Email</span>
+                  </label>
+                  <label class="toggle-chip" [class.active]="pref.inApp" [class.disabled]="pref.requiredInApp">
+                    <input
+                      type="checkbox"
+                      [checked]="pref.inApp"
+                      [disabled]="pref.requiredInApp"
+                      (change)="toggleInAppPref(pref)"
+                    />
+                    <span>In-App</span>
+                  </label>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- FILTER TABS -->
+      <nav class="drawer-tabs" aria-label="Filter notifications by category">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'all'"
+          (click)="setTab('all')"
+          aria-label="Show all notifications"
+        >
+          All
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'tasks'"
+          (click)="setTab('tasks')"
+          aria-label="Filter by tasks"
+        >
+          Tasks
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'approvals'"
+          (click)="setTab('approvals')"
+          aria-label="Filter by approvals"
+        >
+          Approvals
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'failures'"
+          (click)="setTab('failures')"
+          aria-label="Filter by failures and SLA breaches"
+        >
+          Failures & SLA
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'expiry'"
+          (click)="setTab('expiry')"
+          aria-label="Filter by retention expiry"
+        >
+          Expiry
+        </button>
+      </nav>
+
+      <!-- NOTIFICATION ITEMS LIST -->
+      <div class="drawer-body">
+        @if (notificationService.isLoading()) {
+          <app-loading-state layout="cards" message="Loading notifications..."></app-loading-state>
+        } @else if (notificationService.hasError()) {
+
+          <app-error-state
+            title="Unable to load notifications"
+            message="An error occurred while retrieving your notification stream."
+            (retry)="retryLoad()"
+          ></app-error-state>
+        } @else if (filteredNotifications.length === 0) {
+          <app-empty-state
+            title="No notifications"
+            message="You have no notifications in this category."
+          ></app-empty-state>
+        } @else {
+          <div class="notifications-list">
+            @for (item of paginatedNotifications; track item.id) {
+              <div
+                class="notification-card"
+                [class.unread]="!item.read"
+                (click)="handleItemClick(item)"
+                tabindex="0"
+                role="button"
+                [attr.aria-label]="item.title + '. ' + item.message"
+              >
+                <div class="card-left">
+                  <div
+                    class="severity-badge"
+                    [class.info]="item.severity === 'info'"
+                    [class.warning]="item.severity === 'warning'"
+                    [class.error]="item.severity === 'error'"
+                    [class.success]="item.severity === 'success'"
+                  >
+                    @if (item.severity === 'info') { ℹ }
+                    @else if (item.severity === 'warning') { ⚠ }
+                    @else if (item.severity === 'error') { ⚡ }
+                    @else if (item.severity === 'success') { ✓ }
+                  </div>
+                </div>
+
+                <div class="card-main">
+                  <div class="card-title-row">
+                    <strong class="notif-title">{{ item.title }}</strong>
+                    <span class="notif-time">{{ item.timestamp }}</span>
+                  </div>
+                  <p class="notif-message">{{ item.message }}</p>
+                  <div class="card-footer-row">
+                    <span class="deep-link-hint">View details ›</span>
+                    <button
+                      type="button"
+                      class="toggle-read-btn"
+                      (click)="toggleItemRead($event, item)"
+                      [attr.aria-label]="item.read ? 'Mark notification as unread' : 'Mark notification as read'"
+                    >
+                      {{ item.read ? 'Mark unread' : 'Mark read' }}
+                    </button>
+                  </div>
+                </div>
+
+                @if (!item.read) {
+                  <span class="unread-dot" title="Unread notification"></span>
+                }
+              </div>
+            }
+
+            @if (totalPages > 1) {
+              <div class="pagination-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border-color, #e2e8f0); margin-top: 8px;">
+                <button
+                  type="button"
+                  class="btn-text-action"
+                  [disabled]="currentPage() <= 1"
+                  (click)="prevPage()"
+                  aria-label="Previous notifications page"
+                >
+                  ‹ Previous
+                </button>
+                <span style="font-size: 12px; color: var(--text-muted, #64748b);">
+                  Page {{ currentPage() }} of {{ totalPages }}
+                </span>
+                <button
+                  type="button"
+                  class="btn-text-action"
+                  [disabled]="currentPage() >= totalPages"
+                  (click)="nextPage()"
+                  aria-label="Next notifications page"
+                >
+                  Next ›
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+    </aside>
+  </div>
+}
+

@@ -1,0 +1,1574 @@
+openapi: 3.1.0
+info:
+  title: DocuNexa Enterprise Document Intelligence API
+  version: 1.0.0
+  description: High-throughput, multi-tenant document processing, extraction, approval, retention, and governance platform.
+servers:
+  - url: /api/v1
+    description: Primary API Gateway v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter JWT Bearer token with claims (userId, tenantId, role).
+  parameters:
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Unique client token ensuring safe, retryable idempotency semantics across POST operations.
+      schema:
+        type: string
+        maxLength: 255
+    CorrelationIdHeader:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      description: Distributed correlation ID tracing operations across APIs, background workers, and outbox events.
+      schema:
+        type: string
+        maxLength: 64
+    PaginationLimit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 50
+        minimum: 1
+        maximum: 100
+      description: Number of records to return
+    PaginationOffset:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+      description: Pagination offset
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        violations:
+          type: array
+          items:
+            type: object
+    AcceptedAsyncResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ACCEPTED
+        message:
+          type: string
+        jobId:
+          type: string
+        documentId:
+          type: string
+
+security:
+  - bearerAuth: []
+
+paths:
+  /openapi.yaml:
+    get:
+      summary: Download OpenAPI 3.1 Specification
+      description: Returns the raw OpenAPI specification YAML
+      security: []
+      responses:
+        '200':
+          description: OpenAPI specification file
+          content:
+            text/yaml:
+              schema:
+                type: string
+
+  /health:
+    get:
+      summary: Liveness check
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+
+  /ready:
+    get:
+      summary: Readiness check
+      security: []
+      responses:
+        '200':
+          description: Service dependencies are connected
+
+  /auth/login:
+    post:
+      summary: User login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Authentication successful
+
+  /auth/request-otp:
+    post:
+      summary: Request email OTP
+      security: []
+      responses:
+        '200':
+          description: OTP dispatched
+
+  /auth/verify-otp:
+    post:
+      summary: Verify email OTP
+      security: []
+      responses:
+        '200':
+          description: OTP verified
+
+  /auth/smtp-status:
+    get:
+      summary: SMTP readiness status
+      security: []
+      responses:
+        '200':
+          description: SMTP status returned
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      security: []
+      responses:
+        '200':
+          description: Refreshed token pair
+
+  /auth/logout:
+    post:
+      summary: User logout
+      responses:
+        '200':
+          description: Session terminated
+
+  /auth/me:
+    get:
+      summary: Current user profile
+      responses:
+        '200':
+          description: Profile retrieved
+
+  /auth/accept-invite:
+    post:
+      summary: Accept organization invitation
+      security: []
+      responses:
+        '200':
+          description: Invitation accepted
+
+  /auth/mfa/enroll:
+    post:
+      summary: Enroll in TOTP MFA
+      responses:
+        '200':
+          description: MFA secret generated
+
+  /auth/mfa/verify-enrollment:
+    post:
+      summary: Verify MFA enrollment
+      responses:
+        '200':
+          description: MFA verified
+
+  /auth/mfa/disable:
+    post:
+      summary: Disable MFA
+      responses:
+        '200':
+          description: MFA disabled
+
+  /auth/change-password:
+    post:
+      summary: Change user password and invalidate concurrent sessions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string }
+                newPassword: { type: string }
+      responses:
+        '200':
+          description: Password updated successfully
+
+  /auth/sessions:
+    get:
+      summary: List active user sessions
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of active sessions
+
+  /auth/sessions/{id}:
+    delete:
+      summary: Revoke active session
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Session terminated
+
+  /roles:
+    get:
+      summary: List canonical roles and validation override capabilities
+      description: Returns the canonical platform roles and which roles are permitted to override validation failures.
+      responses:
+        '200':
+          description: Canonical roles list
+
+  /users/invite:
+    post:
+      summary: Invite new user
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '200':
+          description: User invited
+
+  /users/invitations:
+    get:
+      summary: List user invitations
+      responses:
+        '200':
+          description: List of invitations
+
+  /users/invitations/{id}:
+    delete:
+      summary: Revoke invitation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Invitation revoked
+
+  /users/profile:
+    get:
+      summary: Retrieve authenticated user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved
+    patch:
+      summary: Update user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName: { type: string }
+                phoneNumber: { type: string }
+                department: { type: string }
+                preferences: { type: object }
+      responses:
+        '200':
+          description: Profile updated
+
+  /users/profile/avatar:
+    post:
+      summary: Upload user profile avatar image
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [avatar]
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Avatar uploaded successfully
+
+  /users/profile/avatar/{filename}:
+    get:
+      summary: Retrieve authenticated user avatar binary
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Avatar binary returned
+
+  /users/{id}/role:
+    patch:
+      summary: Update user role with session revocation and audit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role: { type: string }
+      responses:
+        '200':
+          description: User role updated and previous sessions revoked
+
+  /admin/intake-mailboxes:
+    get:
+      summary: List intake mailboxes
+      responses:
+        '200':
+          description: Mailbox configurations
+    post:
+      summary: Create intake mailbox
+      responses:
+        '201':
+          description: Mailbox configured
+
+  /admin/intake-mailboxes/{id}:
+    patch:
+      summary: Update intake mailbox
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Mailbox updated
+
+  /admin/trace:
+    get:
+      summary: Distributed correlation trace (Admin & Auditor)
+      parameters:
+        - name: correlationId
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Trace execution events
+
+  /admin/export-masking-rules:
+    get:
+      summary: List tenant export masking rules
+      responses:
+        '200':
+          description: Masking rules
+    post:
+      summary: Create export masking rule
+      responses:
+        '201':
+          description: Rule created
+
+  /admin/export-masking-rules/{id}:
+    get:
+      summary: Get export masking rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Masking rule
+    put:
+      summary: Update export masking rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Rule updated
+    delete:
+      summary: Delete export masking rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Rule deleted
+
+  /documents/upload:
+    post:
+      summary: Upload document
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                documentType:
+                  type: string
+      responses:
+        '202':
+          $ref: '#/components/schemas/AcceptedAsyncResponse'
+
+  /documents:
+    get:
+      summary: List documents
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationOffset'
+      responses:
+        '200':
+          description: Document list
+
+  /documents/{id}:
+    get:
+      summary: Get document details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Document details
+
+  /documents/{id}/pages/{pageNo}/image:
+    get:
+      summary: Retrieve rendered page image
+      description: Returns rasterized page image for viewer, tenant-scoped.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: pageNo
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Rendered page image
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Page or document not found or cross-tenant access denied
+
+  /documents/{id}/retry:
+    post:
+      summary: Retry document processing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '202':
+          $ref: '#/components/schemas/AcceptedAsyncResponse'
+
+  /documents/{id}/attempts:
+    get:
+      summary: List document processing attempts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Processing attempts
+
+  /documents/{id}/replace:
+    post:
+      summary: Replace document file with new version
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '202':
+          $ref: '#/components/schemas/AcceptedAsyncResponse'
+
+  /documents/{id}/versions:
+    get:
+      summary: List document versions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Versions
+
+  /documents/{id}/summary:
+    post:
+      summary: Generate grounded document summary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '200':
+          description: Summary generated
+    get:
+      summary: Get latest document summary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Document summary
+
+  /documents/{id}/summary/{summaryId}:
+    put:
+      summary: Correct grounded summary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: summaryId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Summary corrected
+
+  /documents/{id}/process-ocr:
+    post:
+      summary: Trigger OCR extraction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '202':
+          $ref: '#/components/schemas/AcceptedAsyncResponse'
+
+  /documents/{id}/ocr:
+    get:
+      summary: Get OCR result
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OCR result
+
+  /documents/{id}/pages/{pageNumber}/geometry:
+    get:
+      summary: Get page OCR geometry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: pageNumber
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Geometry coordinates
+
+  /documents/{id}/classify:
+    post:
+      summary: Classify document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Classification result
+
+  /documents/{id}/classification:
+    get:
+      summary: Get classification result
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Classification result
+
+  /documents/{id}/extract:
+    post:
+      summary: Run field extraction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '202':
+          $ref: '#/components/schemas/AcceptedAsyncResponse'
+
+  /documents/{id}/extraction:
+    get:
+      summary: Get field extraction result
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Extraction fields
+
+  /review/queue:
+    get:
+      summary: Get review queue
+      responses:
+        '200':
+          description: Review queue
+
+  /review/{id}:
+    get:
+      summary: Get review workbench data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Workbench data
+
+  /review/{id}/fields/{key}:
+    post:
+      summary: Correct extracted field
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: key
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Field corrected
+
+  /review/{id}/decision:
+    post:
+      summary: Submit review decision
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [APPROVE, REJECT, REQUEST_CHANGES]
+                comments:
+                  type: string
+                overrideReason:
+                  type: string
+      responses:
+        '200':
+          description: Decision submitted
+        '422':
+          $ref: '#/components/schemas/ErrorResponse'
+
+  /review/{id}/audit:
+    get:
+      summary: Get review audit logs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Audit logs
+
+  /approvals/queue:
+    get:
+      summary: Get approval queue
+      responses:
+        '200':
+          description: Approval queue
+
+  /approvals/{id}:
+    get:
+      summary: Get approval details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Approval details
+
+  /approvals/{id}/decide:
+    post:
+      summary: Submit approval decision
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Approval recorded
+
+  /erp/publish/{id}:
+    post:
+      summary: Publish document to ERP
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: ERP publication status
+
+  /erp/status/{id}:
+    get:
+      summary: Get ERP publication status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Status
+
+  /document-types:
+    get:
+      summary: List document types
+      responses:
+        '200':
+          description: Document types
+    post:
+      summary: Create document type
+      responses:
+        '201':
+          description: Document type created
+
+  /document-types/{id}:
+    get:
+      summary: Get document type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Document type
+    put:
+      summary: Update document type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Document type updated
+
+  /document-types/{typeId}/templates:
+    get:
+      summary: List extraction templates for type
+      parameters:
+        - name: typeId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Templates
+    post:
+      summary: Create draft extraction template
+      parameters:
+        - name: typeId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '201':
+          description: Draft created
+
+  /extraction-templates:
+    get:
+      summary: List all extraction templates
+      responses:
+        '200':
+          description: Templates
+
+  /document-types/{typeId}/templates/{version}:
+    get:
+      summary: Get specific extraction template version
+      parameters:
+        - name: typeId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: version
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Template version
+
+  /document-types/{typeId}/templates/{version}/publish:
+    post:
+      summary: Publish extraction template version
+      parameters:
+        - name: typeId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: version
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Published
+
+  /document-types/{typeId}/templates/validate:
+    post:
+      summary: Validate extraction template
+      parameters:
+        - name: typeId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Validation result
+
+  /policies:
+    get:
+      summary: List all processing policies
+      responses:
+        '200':
+          description: Policies
+
+  /document-types/{typeId}/policies:
+    get:
+      summary: List policies for document type
+      parameters:
+        - name: typeId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Policies
+    post:
+      summary: Create draft policy for document type
+      parameters:
+        - name: typeId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '201':
+          description: Draft created
+
+  /policies/{id}:
+    get:
+      summary: Get policy details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Policy details
+
+  /policies/{id}/publish:
+    post:
+      summary: Publish policy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Policy published
+
+  /policies/{id}/evaluate:
+    post:
+      summary: Evaluate policy against document extraction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Evaluation result
+
+  /search:
+    get:
+      summary: Semantic vector and metadata search
+      responses:
+        '200':
+          description: Search results
+    post:
+      summary: Semantic vector and metadata search query
+      responses:
+        '200':
+          description: Search results
+
+  /search/index/{id}:
+    post:
+      summary: Index document in vector store
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Indexed
+
+  /compare:
+    get:
+      summary: Compare document versions
+      responses:
+        '200':
+          description: Comparison result
+    post:
+      summary: Compare document versions payload
+      responses:
+        '200':
+          description: Comparison result
+
+  /compare/{id}:
+    get:
+      summary: Get comparison details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Comparison result
+
+  /qa/query:
+    post:
+      summary: Grounded Q&A retrieval query
+      responses:
+        '200':
+          description: Query answer with citations
+
+  /qa/documents:
+    get:
+      summary: List documents eligible for Q&A
+      responses:
+        '200':
+          description: Documents
+
+  /qa/citations/verify:
+    post:
+      summary: Verify citation source
+      responses:
+        '200':
+          description: Citation verified
+
+  /qa/citations/{documentId}/verify:
+    get:
+      summary: Verify citation for document
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Citation verified
+
+  /qa/traces/{traceId}/feedback:
+    post:
+      summary: Submit Q&A user feedback
+      parameters:
+        - name: traceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Feedback recorded
+
+  /notifications:
+    get:
+      summary: List notifications
+      parameters:
+        - $ref: '#/components/parameters/PaginationLimit'
+        - $ref: '#/components/parameters/PaginationOffset'
+      responses:
+        '200':
+          description: Notifications list
+
+  /notifications/{id}/read:
+    patch:
+      summary: Mark notification as read (PATCH)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Marked as read
+    post:
+      summary: Mark notification as read (POST)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Marked as read
+
+  /notifications/read-all:
+    post:
+      summary: Mark all notifications read
+      responses:
+        '200':
+          description: Marked all read
+
+  /notifications/stream-ticket:
+    post:
+      summary: Request 60-second single-use SSE stream ticket
+      responses:
+        '200':
+          description: Stream ticket generated
+
+  /notifications/stream:
+    get:
+      summary: Real-time SSE notification stream
+      security: []
+      parameters:
+        - name: ticket
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Server-sent event stream
+          content:
+            text/event-stream:
+              schema: { type: string }
+
+  /notifications/preferences:
+    get:
+      summary: Get notification preferences
+      responses:
+        '200':
+          description: Preferences
+    patch:
+      summary: Update notification preference
+      responses:
+        '200':
+          description: Preference updated
+
+  /reports/governance:
+    get:
+      summary: Governance report metrics
+      responses:
+        '200':
+          description: Governance report
+
+  /reports/kpis:
+    get:
+      summary: Operational KPI summary
+      responses:
+        '200':
+          description: KPI summary
+
+  /reports/extraction-quality:
+    get:
+      summary: Field extraction accuracy report from reviewer edits
+      responses:
+        '200':
+          description: Extraction quality metrics
+
+  /exports/request:
+    post:
+      summary: Request asynchronous export
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '202':
+          $ref: '#/components/schemas/AcceptedAsyncResponse'
+
+  /exports:
+    get:
+      summary: List export jobs
+      responses:
+        '200':
+          description: Export jobs
+
+  /exports/{id}:
+    get:
+      summary: Get export job details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Export job
+
+  /exports/{id}/download:
+    get:
+      summary: Download export artifact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: token
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Export file artifact
+
+  /exports/{id}/revoke:
+    post:
+      summary: Revoke export artifact download
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Export revoked
+
+  /webhooks/subscriptions:
+    get:
+      summary: List webhook subscriptions
+      responses:
+        '200':
+          description: Subscriptions
+    post:
+      summary: Create webhook subscription
+      responses:
+        '201':
+          description: Subscription created
+
+  /webhooks/subscriptions/{id}:
+    delete:
+      summary: Delete webhook subscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Deleted
+
+  /webhooks/deliveries/{id}/retry:
+    post:
+      summary: Retry webhook delivery
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Delivery retried
+
+  /webhooks/deliveries:
+    get:
+      summary: Get webhook delivery history
+      responses:
+        '200':
+          description: Delivery history
+
+  /connectors/mappings:
+    get:
+      summary: List connector ERP field mappings
+      responses:
+        '200':
+          description: Mappings
+    post:
+      summary: Upsert connector ERP mapping
+      responses:
+        '200':
+          description: Mapping saved
+
+  /connectors/mappings/{id}/sign-off:
+    post:
+      summary: Sign-off mapping
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Signed off
+
+  /connectors/dispatch:
+    post:
+      summary: Dispatch connector posting
+      responses:
+        '200':
+          description: Dispatched
+
+  /retention/policies:
+    get:
+      summary: List retention policies
+      responses:
+        '200':
+          description: Retention policies
+    post:
+      summary: Upsert retention policy
+      responses:
+        '200':
+          description: Policy saved
+
+  /retention/holds:
+    get:
+      summary: List legal holds
+      responses:
+        '200':
+          description: Legal holds
+    post:
+      summary: Place legal hold
+      responses:
+        '201':
+          description: Hold placed
+
+  /retention/holds/{id}/release:
+    post:
+      summary: Release legal hold
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Hold released
+
+  /retention/cases:
+    get:
+      summary: List deletion cases
+      responses:
+        '200':
+          description: Deletion cases
+    post:
+      summary: Request deletion case
+      responses:
+        '201':
+          description: Deletion case requested
+
+  /retention/cases/{id}/approve:
+    post:
+      summary: Approve deletion case
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Approved
+
+  /retention/cases/{id}/purge:
+    post:
+      summary: Execute secure purge
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Purge executed
+
+  /retention/cases/{id}/evidence:
+    get:
+      summary: Get purge evidence artifact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Tamper-evident certificate
+
+  /retention/ledger:
+    get:
+      summary: List tamper-evident retention ledger
+      responses:
+        '200':
+          description: Ledger entries
+
+  /tasks:
+    get:
+      summary: List tenant tasks with filters
+      parameters:
+        - name: mine
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: overdue
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: priority
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of tenant tasks
+    post:
+      summary: Create new task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                documentId: { type: string }
+                assigneeId: { type: string }
+                dueDate: { type: string, format: date-time }
+                priority: { type: string }
+      responses:
+        '201':
+          description: Task created
+
+  /tasks/{id}:
+    get:
+      summary: Get task details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Task details
+    patch:
+      summary: Update task status or assignment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string }
+                priority: { type: string }
+                assigneeId: { type: string }
+                dueDate: { type: string }
+                title: { type: string }
+                description: { type: string }
+      responses:
+        '200':
+          description: Task updated
+
+  /tasks/{id}/comments:
+    get:
+      summary: List task comments thread
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thread comments
+    post:
+      summary: Add comment to task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [commentText]
+              properties:
+                commentText: { type: string }
+      responses:
+        '201':
+          description: Comment created
+
+  /admin/operations/dlq:
+    get:
+      summary: List dead-letter queue failed processing jobs
+      responses:
+        '200':
+          description: Failed DLQ jobs
+
+  /admin/operations/dlq/{id}/retry:
+    post:
+      summary: Retry failed DLQ job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Job re-queued
+
+  /admin/ai-quality/run:
+    post:
+      summary: Trigger AI Quality benchmark evaluation run on golden labeled set
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                analysisVersion: { type: string }
+                modelVersion: { type: string }
+      responses:
+        '202':
+          description: Benchmark run queued successfully
+
+  /admin/ai-quality/runs:
+    get:
+      summary: List AI Quality evaluation benchmark historical runs
+      responses:
+        '200':
+          description: List of evaluation runs
+
+

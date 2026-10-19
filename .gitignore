@@ -1,0 +1,25 @@
+# Node / Angular build outputs
+node_modules/
+dist/
+.angular/
+.gradle/
+tmp/
+out-tsc/
+scratch/
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store
+*.log
+.env
+*.env
+.env.sandbox
+*.sandbox
+uploads/
+**/uploads/
+data/
+**/data/
+backups/
+**/backups/
+

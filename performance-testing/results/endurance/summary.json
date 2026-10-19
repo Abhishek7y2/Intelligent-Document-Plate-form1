@@ -1,0 +1,86 @@
+{
+  "profile": "endurance",
+  "description": "Sustained steady load (10 VUs) over 60 seconds to verify memory stability, connection pool health, and latency drift absence",
+  "concurrency": 10,
+  "durationSeconds": 60.1,
+  "totalRequests": 5095,
+  "successfulRequests": 4893,
+  "expectedDenials": 202,
+  "unexpectedFailures": 0,
+  "genuineErrorRate": 0,
+  "rawFailureRate": 3.96,
+  "throughputRps": 84.8,
+  "statusCodes": {
+    "200": 4080,
+    "201": 813,
+    "403": 202
+  },
+  "overallLatencies": {
+    "count": 5095,
+    "min": 1.88,
+    "max": 2820.24,
+    "mean": 12.66,
+    "p50": 5.77,
+    "p90": 12.96,
+    "p95": 16.55,
+    "p99": 26.63
+  },
+  "transactionBreakdown": {
+    "GET /search (Metadata & Text)": {
+      "count": 1022,
+      "min": 2.75,
+      "max": 2761.28,
+      "mean": 9.22,
+      "p50": 5.69,
+      "p90": 10.48,
+      "p95": 12.39,
+      "p99": 21.52
+    },
+    "GET /documents/:id": {
+      "count": 1020,
+      "min": 1.88,
+      "max": 2772.38,
+      "mean": 12.82,
+      "p50": 3.76,
+      "p90": 8.29,
+      "p95": 12.36,
+      "p99": 18.13
+    },
+    "GET /compare?doc1=DOC-10245&doc2=v2": {
+      "count": 1020,
+      "min": 3.57,
+      "max": 2820.24,
+      "mean": 19.56,
+      "p50": 9.71,
+      "p90": 20.02,
+      "p95": 24.71,
+      "p99": 44.62
+    },
+    "POST /qa/query (Grounded AI)": {
+      "count": 1018,
+      "min": 4.03,
+      "max": 28.37,
+      "mean": 8.65,
+      "p50": 7.79,
+      "p90": 13.44,
+      "p95": 16.09,
+      "p99": 21.72
+    },
+    "POST /documents/upload (Ack < 5s)": {
+      "count": 1015,
+      "min": 2.46,
+      "max": 2795.36,
+      "mean": 13.06,
+      "p50": 4.13,
+      "p90": 7.62,
+      "p95": 9.7,
+      "p99": 16
+    }
+  },
+  "memoryTelemetry": {
+    "initialHeapUsedMb": 20.5,
+    "finalHeapUsedMb": 27,
+    "finalRssMb": 117.1
+  },
+  "timestamp": "2026-10-14T05:57:03.019Z"
+}

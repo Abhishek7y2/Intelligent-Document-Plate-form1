@@ -1,0 +1,79 @@
+{
+  "profile": "peak-load",
+  "description": "Simulated peak workload (30 VUs) measuring queue capacity, p95 latency, and worker throughput",
+  "concurrency": 30,
+  "durationSeconds": 20.1,
+  "totalRequests": 4611,
+  "successfulRequests": 4433,
+  "errorCount": 178,
+  "errorRate": 3.86,
+  "throughputRps": 229.5,
+  "statusCodes": {
+    "200": 3702,
+    "201": 731,
+    "403": 178
+  },
+  "overallLatencies": {
+    "count": 4611,
+    "min": 2.45,
+    "max": 233.25,
+    "mean": 15.95,
+    "p50": 7.98,
+    "p90": 31.8,
+    "p95": 67.12,
+    "p99": 131.09
+  },
+  "transactionBreakdown": {
+    "GET /search (Metadata & Text)": {
+      "count": 935,
+      "min": 2.91,
+      "max": 232.31,
+      "mean": 15.81,
+      "p50": 7.74,
+      "p90": 33.01,
+      "p95": 66.63,
+      "p99": 128.16
+    },
+    "GET /documents/:id": {
+      "count": 929,
+      "min": 2.45,
+      "max": 233.25,
+      "mean": 15.94,
+      "p50": 7.36,
+      "p90": 31.25,
+      "p95": 69.18,
+      "p99": 142.33
+    },
+    "GET /compare?doc1=DOC-10245&doc2=v2": {
+      "count": 922,
+      "min": 3.01,
+      "max": 232.97,
+      "mean": 15.48,
+      "p50": 8.82,
+      "p90": 28.5,
+      "p95": 56.65,
+      "p99": 123.18
+    },
+    "POST /qa/query (Grounded AI)": {
+      "count": 916,
+      "min": 3.42,
+      "max": 222.63,
+      "mean": 15.78,
+      "p50": 8.33,
+      "p90": 27.87,
+      "p95": 64.22,
+      "p99": 130.08
+    },
+    "POST /documents/upload (Ack < 5s)": {
+      "count": 909,
+      "min": 2.69,
+      "max": 232.46,
+      "mean": 16.77,
+      "p50": 7.92,
+      "p90": 41.14,
+      "p95": 75.38,
+      "p99": 137.33
+    }
+  },
+  "timestamp": "2026-10-14T05:07:06.100Z"
+}

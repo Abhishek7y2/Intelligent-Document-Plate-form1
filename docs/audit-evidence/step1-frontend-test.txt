@@ -1,0 +1,41 @@
+
+> document-intelligence-ui@0.0.0 test
+> ng test
+
+> Building...
+√ Building...
+Application bundle generation complete. [12.745 seconds] - 2026-10-16T05:40:41.149Z
+
+
+ RUN  v5.0.3 C:/Users/Mobiloitte/3D Objects/document_intelligence_platform-main/document_intelligence_platform-main/document-intelligence-ui
+
+ ✓  document-intelligence-ui  src/app/core/services/http-retention.service.spec.ts (6 tests) 244ms
+ ✓  document-intelligence-ui  src/app/features/auth/auth-security-gaps.spec.ts (5 tests) 103ms
+ ✓  document-intelligence-ui  src/app/features/intake/intake-batch.spec.ts (6 tests) 17ms
+stderr | src/app/core/services/http-document.service.spec.ts > HttpDocumentService > should return null when document is not found or API errors
+[HttpDocumentService] Failed to fetch document DOC-NONEXISTENT: Not found
+
+stderr | src/app/core/services/http-document.service.spec.ts > HttpDocumentService > should return empty list when getDocuments fails
+[HttpDocumentService] Failed to fetch documents from API: Network error
+
+ ✓  document-intelligence-ui  src/app/core/services/http-document.service.spec.ts (6 tests) 11ms
+ ✓  document-intelligence-ui  src/app/core/services/notification-stream.spec.ts (4 tests) 8ms
+ ✓  document-intelligence-ui  src/app/features/review/review.spec.ts (5 tests) 4ms
+ ✓  document-intelligence-ui  src/app/core/services/http-qa.service.spec.ts (5 tests) 5ms
+ ✓  document-intelligence-ui  src/app/features/review/review-overlay.spec.ts (4 tests) 106ms
+ ✓  document-intelligence-ui  src/app/core/services/http-review.service.spec.ts (5 tests) 5ms
+ ✓  document-intelligence-ui  src/app/core/services/http-report.service.spec.ts (3 tests) 4ms
+ ✓  document-intelligence-ui  src/app/core/services/http-approval.service.spec.ts (5 tests) 4ms
+ ✓  document-intelligence-ui  src/app/core/guards/role-guard.spec.ts (4 tests) 5ms
+ ✓  document-intelligence-ui  src/app/core/services/http-search.service.spec.ts (3 tests) 3ms
+ ✓  document-intelligence-ui  src/app/core/services/http-compare.service.spec.ts (2 tests) 2ms
+ ✓  document-intelligence-ui  src/app/app.spec.ts (1 test) 1ms
+ ✓  document-intelligence-ui  src/app/features/profile/profile.spec.ts (7 tests) 2342ms
+   ✓ Profile Component (DocNexa Enterprise Profile Page) (7)
+     ✓ should create the profile component 1392ms
+
+ Test Files  16 passed (16)
+      Tests  71 passed (71)
+   Start at  11:10:44
+   Duration  35.08s (environment 97%, setup 1%, transform 1%, tests 1%)
+

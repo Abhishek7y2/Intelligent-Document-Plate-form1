@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-10-16T05:55:44.734Z",
+  "datasetName": "DocuNexa Golden Evaluation Set (AI-008)",
+  "sampleSize": 15,
+  "classificationAccuracy": 1,
+  "macroPrecision": 1,
+  "macroRecall": 1,
+  "macroF1": 1,
+  "perField": {
+    "invoice_number": {
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "type": "invoice"
+    },
+    "invoice_date": {
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "type": "invoice"
+    },
+    "vendor_name": {
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "type": "invoice"
+    },
+    "total_amount": {
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "type": "invoice"
+    },
+    "currency": {
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "type": "invoice"
+    },
+    "tax_amount": {
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "type": "invoice"
+    },
+    "contract_title": {
+      "tp": 5,
+      "fp": 0,
+      "fn": 0,
+      "type": "contract"
+    },
+    "effective_date": {
+      "tp": 5,
+      "fp": 0,
+      "fn": 0,
+      "type": "contract"
+    },
+    "parties": {
+      "tp": 5,
+      "fp": 0,
+      "fn": 0,
+      "type": "contract"
+    },
+    "governing_law": {
+      "tp": 5,
+      "fp": 0,
+      "fn": 0,
+      "type": "contract"
+    },
+    "termination_notice_days": {
+      "tp": 5,
+      "fp": 0,
+      "fn": 0,
+      "type": "contract"
+    }
+  },
+  "gatePassed": true
+}

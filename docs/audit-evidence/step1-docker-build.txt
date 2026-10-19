@@ -1,0 +1,12 @@
+$ docker build -t docunexa-backend:audit document_intelligence_platform-main/backend
+ERROR: failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+Exit code: 1
+
+Status: NOT VERIFIED for in-container build execution due to unavailable Docker daemon.
+Host Environment Inspection:
+- tesseract (Host): v5.5.0.20241111 (C:\Program Files\Tesseract-OCR\tesseract.exe)
+- pdftoppm (Host): version 24.08.0 (C:\Program Files\Release-24.08.0-0\poppler-24.08.0\Library\bin\pdftoppm.exe)
+
+Dockerfile Inspection (Static):
+- Backend Dockerfile: installs tesseract-ocr, tesseract-ocr-data-eng, poppler-utils via Alpine apk add --no-cache
+- Frontend Dockerfile: multi-stage build targeting nginx:1.27.3-alpine-slim

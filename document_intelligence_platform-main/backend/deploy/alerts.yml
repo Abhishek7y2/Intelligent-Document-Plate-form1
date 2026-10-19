@@ -1,0 +1,62 @@
+groups:
+  - name: docunexa-production-alerts
+    rules:
+      - alert: DocunexaHighHttpErrorRate
+        expr: (sum(rate(docunexa_http_requests_total{status=~"5.."}[5m])) / sum(rate(docunexa_http_requests_total[5m]))) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+          tier: api
+        annotations:
+          summary: "DocuNexa API HTTP 5xx error rate is elevated (> 5%)"
+          description: "Over the last 5 minutes, 5xx responses accounted for more than 5% of total traffic. Check API logs and downstream database connectivity."
+
+      - alert: DocunexaHighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(docunexa_http_request_duration_seconds_bucket[5m])) by (le)) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          tier: api
+        annotations:
+          summary: "DocuNexa API p95 request latency exceeds 2.0s"
+          description: "95th percentile HTTP latency has exceeded 2 seconds for 5 consecutive minutes (target p95 < 1000ms for search, < 5000ms for intake ACK)."
+
+      - alert: DocunexaQueueDepthElevated
+        expr: docunexa_queue_depth > 1000
+        for: 5m
+        labels:
+          severity: warning
+          tier: worker
+        annotations:
+          summary: "Worker queue depth backlog is high (> 1000 jobs)"
+          description: "Active/waiting jobs across BullMQ queues (OCR, extraction) exceeded 1000 for more than 5 minutes. Consider scaling worker replicas."
+
+      - alert: DocunexaFailedJobsIncreasing
+        expr: rate(docunexa_failed_jobs_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          tier: worker
+        annotations:
+          summary: "Worker job failure rate is elevated"
+          description: "Jobs in BullMQ dead-letter / failure queue are accumulating at > 0.1/s. Check OCR engine and AI extraction upstream services."
+
+      - alert: DocunexaOutboxLagHigh
+        expr: docunexa_outbox_lag_seconds > 60
+        for: 3m
+        labels:
+          severity: critical
+          tier: database
+        annotations:
+          summary: "Outbox dispatcher lag exceeds 60 seconds"
+          description: "Oldest pending outbox event has been un-dispatched for > 60s. Events may not be transitioning to BullMQ or notification streams."
+
+      - alert: DocunexaDualWriteMongoFailures
+        expr: rate(docunexa_dual_write_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          tier: derived-store
+        annotations:
+          summary: "Mongo derived store dual-write failure detected"
+          description: "Postgres write succeeded but Mongo derived copy failed. Re-sync process or Mongo connectivity check required."

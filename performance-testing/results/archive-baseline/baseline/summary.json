@@ -1,0 +1,97 @@
+{
+  "profile": "baseline",
+  "description": "Low concurrency (5 VUs) establishing normal response times, throughput, and error rate",
+  "concurrency": 5,
+  "durationSeconds": 15,
+  "totalRequests": 449,
+  "successfulRequests": 449,
+  "errorCount": 0,
+  "errorRate": 0,
+  "throughputRps": 29.8,
+  "statusCodes": {
+    "200": 449
+  },
+  "overallLatencies": {
+    "count": 449,
+    "min": 2.71,
+    "max": 15.04,
+    "mean": 5.16,
+    "p50": 4.51,
+    "p90": 8.08,
+    "p95": 9.92,
+    "p99": 13.02
+  },
+  "transactionBreakdown": {
+    "GET /search (Metadata & Text)": {
+      "count": 67,
+      "min": 3.1,
+      "max": 13.15,
+      "mean": 5.13,
+      "p50": 4.45,
+      "p90": 8.11,
+      "p95": 9.86,
+      "p99": 13.15
+    },
+    "GET /documents/:id": {
+      "count": 65,
+      "min": 2.98,
+      "max": 14.58,
+      "mean": 5.04,
+      "p50": 4.21,
+      "p90": 7.98,
+      "p95": 9.99,
+      "p99": 14.58
+    },
+    "GET /compare?doc1=DOC-10245&doc2=v2": {
+      "count": 65,
+      "min": 3.3,
+      "max": 14.57,
+      "mean": 5.67,
+      "p50": 4.96,
+      "p90": 9.92,
+      "p95": 10.69,
+      "p99": 14.57
+    },
+    "POST /qa/query (Grounded AI)": {
+      "count": 64,
+      "min": 3.83,
+      "max": 15.04,
+      "mean": 5.83,
+      "p50": 5.09,
+      "p90": 8.38,
+      "p95": 10.03,
+      "p99": 15.04
+    },
+    "GET /review/queue": {
+      "count": 63,
+      "min": 2.71,
+      "max": 13.02,
+      "mean": 4.85,
+      "p50": 4.08,
+      "p90": 7.8,
+      "p95": 9.53,
+      "p99": 13.02
+    },
+    "GET /notifications": {
+      "count": 63,
+      "min": 3,
+      "max": 11.51,
+      "mean": 4.73,
+      "p50": 3.88,
+      "p90": 7.75,
+      "p95": 8,
+      "p99": 11.51
+    },
+    "GET /reports/governance": {
+      "count": 62,
+      "min": 2.85,
+      "max": 11.67,
+      "mean": 4.87,
+      "p50": 4.32,
+      "p90": 6.81,
+      "p95": 7.81,
+      "p99": 11.67
+    }
+  },
+  "timestamp": "2026-10-14T05:06:25.829Z"
+}

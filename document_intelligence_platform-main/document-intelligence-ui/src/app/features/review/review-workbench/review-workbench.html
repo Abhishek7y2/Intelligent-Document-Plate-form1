@@ -1,0 +1,1029 @@
+<div class="workbench-page">
+  @if (isLoading()) {
+    <app-loading-state layout="split-pane" message="Rendering interactive OCR canvas and bounding boxes..."></app-loading-state>
+  } @else if (hasError()) {
+    <app-error-state [variant]="errorVariant()" (retry)="retryLoad()"></app-error-state>
+  } @else {
+
+  <!-- TOP WORKBENCH HEADER -->
+  <header class="workbench-header">
+    <div class="header-left">
+      <a routerLink="/review" class="btn-back" title="Return to Review Queue">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>Back to Queue</span>
+      </a>
+
+      <div class="doc-identity">
+        <!-- DOCUMENT CLASSIFICATION SELECTOR (FR-007) -->
+        <div class="classification-picker">
+          <span class="picker-label">Doc Type:</span>
+          <select 
+            [ngModel]="documentType" 
+            (ngModelChange)="onClassificationSelectChange($event)"
+            class="classification-select"
+            title="Change Document Classification Schema"
+          >
+            <option value="Purchase Invoice">📄 Purchase Invoice</option>
+            <option value="Supplier Contract">📜 Supplier Contract</option>
+            <option value="Internal Policy">📋 Internal Policy</option>
+          </select>
+        </div>
+
+        <div class="doc-meta">
+          <div class="title-row">
+            <h1>{{ documentName }}</h1>
+            <span class="status-pill" [class.awaiting]="documentStatus === 'Awaiting Clarification'">
+              ● {{ documentStatus | uppercase }}
+            </span>
+            @if (isDirty) {
+              <span class="draft-badge" title="Unsaved changes saved to browser storage">● Draft Restored</span>
+            }
+          </div>
+          <span class="doc-sub">{{ documentId }} · Submitted by Rahul Sharma · {{ totalPages }} pages</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CANVAS TOOLS: PAGE & ZOOM -->
+    <div class="canvas-controls">
+      <div class="page-stepper">
+        <button type="button" class="btn-icon" (click)="prevPage()" [disabled]="currentPage <= 1" title="Previous Page (Key ←)">‹</button>
+        <span class="page-label">
+          Page <strong>{{ currentPage }}</strong> of {{ totalPages }}
+          @if (pageOcrStatuses[currentPage - 1]?.status === 'failed') {
+            <span class="ocr-warn-dot" title="OCR Failure on this page">⚠️</span>
+          }
+        </span>
+        <button type="button" class="btn-icon" (click)="nextPage()" [disabled]="currentPage >= totalPages" title="Next Page (Key →)">›</button>
+      </div>
+
+      <div class="zoom-stepper">
+        <button type="button" class="btn-icon" (click)="zoomOut()" title="Zoom Out">−</button>
+        <button type="button" class="btn-text" (click)="resetZoom()" title="Reset Zoom">{{ zoomLevel }}%</button>
+        <button type="button" class="btn-icon" (click)="zoomIn()" title="Zoom In">+</button>
+        <button type="button" class="btn-icon" (click)="rotateDoc()" title="Rotate 90°">↻</button>
+      </div>
+
+      <!-- BOUNDING BOX DRAWING TOOL (TASK 5B) -->
+      <button 
+        type="button" 
+        class="btn-draw-tool" 
+        [class.active]="isDrawingRegionMode" 
+        (click)="toggleDrawRegionMode()"
+        title="Add Region Bounding Box Tool"
+      >
+        <span class="icon">✏️</span>
+        <span>{{ isDrawingRegionMode ? 'Drawing Mode...' : '+ Add Region' }}</span>
+      </button>
+
+      <!-- KEYBOARD SHORTCUTS HELP BUTTON -->
+      <button type="button" class="btn-icon help-btn" (click)="isShortcutHelpOpen = true" title="Keyboard Shortcuts Help (?)">
+        ?
+      </button>
+
+      <!-- COMMENTS DRAWER TOGGLE -->
+      <button type="button" class="btn-comments-toggle" (click)="isCommentsDrawerOpen = !isCommentsDrawerOpen" title="Open Discussion Drawer">
+        <span>💬 Comments</span>
+        @if (comments.length > 0) {
+          <span class="badge">{{ comments.length }}</span>
+        }
+      </button>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="header-actions">
+      <button type="button" class="btn-secondary" (click)="acceptAllExtractions()">
+        <span>✓ Accept All</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="btn-primary" 
+        [class.blocked]="isSubmissionBlocked"
+        (click)="completeReviewAndEscalate()"
+        [title]="isSubmissionBlocked ? 'Submission blocked: resolve mandatory exceptions and low-confidence fields' : 'Complete Review and Send to Approvals'"
+      >
+        <span>Complete Review</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- RE-EXTRACTING PROCESSING BANNER (FR-007) -->
+  @if (isReExtracting) {
+    <div class="reextracting-overlay">
+      <div class="spinner"></div>
+      <div class="msg">
+        <h3>Re-extracting Document Under Schema "{{ targetDocType }}"...</h3>
+        <p>Running layout analysis, entity parsing, and domain rules.</p>
+      </div>
+    </div>
+  }
+
+  <!-- STATUS CHIPS LEGEND BANNER (TASK 5A Item 1) -->
+  <div class="status-legend-bar">
+    <span class="legend-title">FIELD STATUS LEGEND:</span>
+    <div class="legend-item">
+      <span class="chip ai-suggestion">AI suggestion</span>
+      <span class="desc">Raw model output</span>
+    </div>
+    <div class="legend-item">
+      <span class="chip reviewer-confirmed">Reviewer confirmed</span>
+      <span class="desc">Human verified</span>
+    </div>
+    <div class="legend-item">
+      <span class="chip edited">Edited</span>
+      <span class="desc">Corrected by user</span>
+    </div>
+    <div class="legend-item">
+      <span class="chip rejected">Needs review / Rejected</span>
+      <span class="desc">Struck-through anomaly</span>
+    </div>
+    <div class="legend-item">
+      <span class="chip published">Published</span>
+      <span class="desc">Final locked state</span>
+    </div>
+    @if (isDirty) {
+      <button type="button" class="btn-reset-draft" (click)="clearDraftStorage()" title="Reset to raw extractions">
+        Reset Draft
+      </button>
+    }
+  </div>
+
+  <!-- MAIN SPLIT-SCREEN WORKBENCH -->
+  <main class="split-layout">
+
+    <!-- LEFT PANE: HIGH-FIDELITY DOCUMENT CANVAS & OCR STATUS BANNERS -->
+    <section class="document-pane">
+      <!-- FAILED OCR PAGE BANNER (FR-012) -->
+      @if (pageOcrStatuses[currentPage - 1]?.status === 'failed') {
+        <div class="ocr-failed-banner danger">
+          <div class="banner-left">
+            <span class="icon">⚠️</span>
+            <div>
+              <strong>OCR failed on Page {{ currentPage }}</strong>
+              <p>{{ pageOcrStatuses[currentPage - 1]?.message }}</p>
+            </div>
+          </div>
+          <div class="banner-actions">
+            <button type="button" class="btn-ocr-action" (click)="openManualTranscription(pageOcrStatuses[currentPage - 1])">
+              ✍️ Enter values manually
+            </button>
+            <button type="button" class="btn-ocr-action" (click)="retryOcrForPage(pageOcrStatuses[currentPage - 1])">
+              🔄 Retry OCR
+            </button>
+            <button type="button" class="btn-ocr-action outline" (click)="escalateOcrIssue(pageOcrStatuses[currentPage - 1])">
+              🚨 Escalate
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- UNSUPPORTED LANGUAGE BANNER (FR-012) -->
+      @if (pageOcrStatuses[currentPage - 1]?.status === 'unsupported_language') {
+        <div class="ocr-failed-banner warning">
+          <div class="banner-left">
+            <span class="icon">🌐</span>
+            <div>
+              <strong>Unsupported Language Script on Page {{ currentPage }}</strong>
+              <p>{{ pageOcrStatuses[currentPage - 1]?.message }}</p>
+            </div>
+          </div>
+          <div class="banner-actions">
+            <button type="button" class="btn-ocr-action" (click)="retryOcrForPage(pageOcrStatuses[currentPage - 1])">
+              🌐 Run Multilingual OCR Engine
+            </button>
+            <button type="button" class="btn-ocr-action" (click)="openManualTranscription(pageOcrStatuses[currentPage - 1])">
+              ✍️ Transcribe Manually
+            </button>
+          </div>
+        </div>
+      }
+
+      <div class="pane-header">
+        <div class="pane-title">
+          <span class="dot-indicator"></span>
+          <span>DOCUMENT VIEW (PAGE {{ currentPage }} OF {{ totalPages }})</span>
+        </div>
+        <span class="tip-badge">Use ↑↓←→ arrow keys to navigate bounding boxes · Press ? for help</span>
+      </div>
+
+      <div class="canvas-viewport" (click)="onCanvasClick($event)">
+        <div 
+          class="document-sheet"
+          [style.transform]="'scale(' + (zoomLevel / 100) + ') rotate(' + rotation + 'deg)'"
+        >
+          <!-- RASTERIZED SERVER-SIDE PAGE IMAGE (Part 0.3 / C.1) -->
+          @if (hasPageImage) {
+            <img
+              [src]="pageImageUrl"
+              class="page-raster-img"
+              (error)="onPageImageError()"
+              alt="Rendered page {{ currentPage }}"
+            />
+          }
+
+          <!-- BOUNDING BOX OVERLAYS (TASK 5B Accessibility) -->
+          <div class="bounding-boxes-layer">
+            @for (box of boundingBoxes; track box.id) {
+              @if (box.page === currentPage) {
+                <div
+                  class="bounding-box"
+                  [class.active]="isBoxActive(box.fieldKey)"
+                  [class.low-confidence]="box.confidence < 90"
+                  [class.user-drawn]="box.isUserDrawn"
+                  [style.top.%]="box.top"
+                  [style.left.%]="box.left"
+                  [style.width.%]="box.width"
+                  [style.height.%]="box.height"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-label]="box.label + ', Page ' + box.page + ', ' + box.confidence + '% confidence'"
+                  (click)="onBoxClick(box); $event.stopPropagation()"
+                  (keydown.enter)="onBoxClick(box); $event.stopPropagation()"
+                >
+                  <span class="box-tag">
+                    {{ box.label }} ({{ box.confidence }}%)
+                  </span>
+                </div>
+              }
+            }
+          </div>
+
+          <!-- DOCUMENT CONTENT CANVAS SIMULATION (FALLBACK IF NO RASTERIZED IMAGE) -->
+          <div class="sheet-content" [class.has-raster-overlay]="hasPageImage">
+            @if (documentType === 'Purchase Invoice') {
+              <div class="invoice-letterhead">
+                <div class="company-brand">
+                  <div class="logo-box">AIS</div>
+                  <div>
+                    <h2 class="company-name">Apex Industrial Solutions Pvt Ltd</h2>
+                    <p class="company-addr">Plot 42, Electronic City Phase 1, Bangalore 560100</p>
+                    <p class="company-tax">GSTIN: 27AABCA1234F1Z8 · CIN: U72200KA2015PTC081290</p>
+                  </div>
+                </div>
+
+                <div class="invoice-title-block">
+                  <span class="tax-inv-badge">TAX INVOICE</span>
+                  <div class="inv-number-callout">
+                    <strong>Invoice #: INV-78421</strong>
+                    <span>Date: 04 Oct 2026</span>
+                    <span>PO Ref: PO-2026-9842</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sheet-divider"></div>
+
+              <div class="bill-to-grid">
+                <div class="bill-box">
+                  <span class="bill-label">BILLED TO (BUYER):</span>
+                  <strong>Acme Corporation Global Pvt Ltd</strong>
+                  <p>Cyber City, Tower B, Level 8, DLF Phase 2, Gurugram 122002</p>
+                  <p>GSTIN: 06AABCA9876M1Z2 · State: Haryana (06)</p>
+                </div>
+                <div class="bill-box">
+                  <span class="bill-label">PAYMENT TERMS:</span>
+                  <strong>Due Date: 03 Nov 2026 (Net 30 Days)</strong>
+                  <p>Dispatched via: BlueDart Surface Express</p>
+                  <p>Dispatch Note: DN-901824</p>
+                </div>
+              </div>
+
+              <table class="simulated-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Description of Goods / Services</th>
+                    <th>HSN</th>
+                    <th class="num">Qty</th>
+                    <th class="num">Rate (₹)</th>
+                    <th class="num">Amount (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of lineItems; track item.id) {
+                    <tr [class.discrepancy-row]="item.hasDiscrepancy">
+                      <td>{{ item.id }}</td>
+                      <td>{{ item.description }}</td>
+                      <td>{{ item.hsnCode }}</td>
+                      <td class="num">{{ item.quantity }}</td>
+                      <td class="num">{{ item.unitPrice | number:'1.2-2' }}</td>
+                      <td class="num">{{ item.lineTotal | number:'1.2-2' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              <div class="simulated-totals">
+                <div class="totals-row">
+                  <span>Sub Total (Before Tax):</span>
+                  <strong>₹ {{ calculatedSubtotal | number:'1.2-2' }}</strong>
+                </div>
+                <div class="totals-row">
+                  <span>Integrated GST (IGST 18%):</span>
+                  <strong>₹ {{ calculatedTaxTotal | number:'1.2-2' }}</strong>
+                </div>
+                <div class="totals-row grand">
+                  <span>TOTAL INVOICE AMOUNT:</span>
+                  <strong>₹ {{ extractedGrandTotal | number:'1.2-2' }}</strong>
+                </div>
+              </div>
+            } @else if (documentType === 'Supplier Contract') {
+              <div class="contract-doc-sheet">
+                <h2>MASTER INDUSTRIAL EQUIPMENT & SERVICE AGREEMENT</h2>
+                <p>This Master Service Agreement is made on 01 Nov 2026 between <strong>Apex Industrial Solutions Pvt Ltd</strong> (Party A) and <strong>Acme Corporation Global Pvt Ltd</strong> (Party B).</p>
+                <div class="clause-box">
+                  <h4>CLAUSE 1. TERM & RENEWAL</h4>
+                  <p>This contract shall take effect on 01 Nov 2026 and expire on 31 Oct 2029, with 60 Days prior written notice required for auto-renewal cancellation.</p>
+                </div>
+                <div class="clause-box">
+                  <h4>CLAUSE 2. PENALTY & LIABILITY</h4>
+                  <p>Maximum Liability & Penalty Cap is limited to 100% of Total Contract Value (₹ 50,00,000).</p>
+                </div>
+              </div>
+            } @else {
+              <div class="policy-doc-sheet">
+                <h2>CORPORATE PROCUREMENT & VENDOR SIGN-OFF POLICY</h2>
+                <p>Document Ref: <strong>POL-FIN-2026-004</strong> · Version 4.2 · Classification: Internal Confidential</p>
+                <p>Department Owner: Finance & Accounts Control · Compliance Officer: Chief Financial Officer</p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANE: HUMAN-IN-THE-LOOP VERIFICATION & TABS -->
+    <section class="verification-pane">
+
+      <!-- NAVIGATION TABS -->
+      <nav class="verification-tabs">
+        <button 
+          type="button" 
+          class="vtab-btn" 
+          [class.active]="activeTab === 'metadata'"
+          (click)="activeTab = 'metadata'"
+        >
+          <span class="icon">🏷️</span>
+          <span>Field Extraction</span>
+          <span class="count-tag">{{ fields.length }}</span>
+        </button>
+
+        @if (documentType === 'Purchase Invoice') {
+          <button 
+            type="button" 
+            class="vtab-btn" 
+            [class.active]="activeTab === 'line-items'"
+            (click)="activeTab = 'line-items'"
+          >
+            <span class="icon">🧮</span>
+            <span>Line Items & Math</span>
+            <span class="count-tag" [class.danger]="!isArithmeticMatch">
+              {{ isArithmeticMatch ? '✓ Reconciled' : '! Discrepancy' }}
+            </span>
+          </button>
+        }
+
+        <button 
+          type="button" 
+          class="vtab-btn" 
+          [class.active]="activeTab === 'exceptions'"
+          (click)="activeTab = 'exceptions'"
+        >
+          <span class="icon">⚠️</span>
+          <span>Exceptions</span>
+          @if (activeBlockingExceptions.length > 0) {
+            <span class="count-tag danger">{{ activeBlockingExceptions.length }} Blocked</span>
+          }
+        </button>
+
+        <button 
+          type="button" 
+          class="vtab-btn" 
+          [class.active]="activeTab === 'audit'"
+          (click)="activeTab = 'audit'"
+        >
+          <span class="icon">📜</span>
+          <span>Review History</span>
+        </button>
+      </nav>
+
+      <!-- TAB 1: FIELD EXTRACTION & STATUS CHIPS (TASK 5A Item 1 & 2) -->
+      @if (activeTab === 'metadata') {
+        <div class="tab-scroll-body">
+
+          <!-- UNVERIFIED BLOCKING SUMMARY ALERT -->
+          @if (unactionedLowConfidenceFields.length > 0) {
+            <div class="unverified-summary-alert">
+              <span class="alert-icon">⚠️</span>
+              <div>
+                <strong>{{ unactionedLowConfidenceFields.length }} Field(s) Require Explicit Action</strong>
+                <p>Low-confidence (< 90%) or mandatory fields must be explicitly Accepted, Edited, or Rejected before submission.</p>
+              </div>
+            </div>
+          }
+
+          <div class="field-cards-list">
+            @for (field of fields; track field.key) {
+              <div 
+                class="field-card"
+                [class.active-card]="activeFieldKey === field.key"
+                [class.flagged-card]="field.status === 'ai_suggestion' && (field.confidence < 90 || field.isMandatory)"
+                [class.rejected-card]="field.status === 'rejected'"
+                (mouseenter)="hoverField(field.key)"
+                (mouseleave)="hoverField(null)"
+                (click)="selectField(field.key)"
+              >
+                <div class="card-top">
+                  <div class="label-info">
+                    <span class="field-label">{{ field.label }}</span>
+                    @if (field.isMandatory) {
+                      <span class="mandatory-star" title="Mandatory field">* Required</span>
+                    }
+                    @if (field.isArithmetic) {
+                      <span class="arithmetic-tag">Math Formula</span>
+                    }
+                  </div>
+
+                  <!-- STATUS CHIP (TASK 5A Item 1) -->
+                  <div class="status-chip-box">
+                    @if (field.status === 'ai_suggestion') {
+                      <span class="status-chip ai-suggestion">AI suggestion</span>
+                    } @else if (field.status === 'reviewer_confirmed') {
+                      <span class="status-chip reviewer-confirmed">✓ Reviewer confirmed</span>
+                    } @else if (field.status === 'edited') {
+                      <span class="status-chip edited">✎ Edited</span>
+                    } @else if (field.status === 'rejected') {
+                      <span class="status-chip rejected">✕ Rejected</span>
+                    } @else if (field.status === 'published') {
+                      <span class="status-chip published">🔒 Published</span>
+                    }
+
+                    <span class="confidence-val" [class.low]="field.confidence < 90">
+                      {{ field.confidence }}% AI
+                    </span>
+
+                    <!-- C.1: UNMAPPED EVIDENCE LOCATION UNAVAILABLE BADGE -->
+                    @if (field.evidence_unmapped) {
+                      <span class="unmapped-indicator-badge" title="No bounding box detected on document canvas">
+                        📍 Location unavailable
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <!-- VALUE DISPLAY / EDIT INPUT -->
+                <div class="input-wrapper">
+                  @if (field.status === 'rejected') {
+                    <div class="rejected-value-box">
+                      <span class="struck-value">{{ field.value }}</span>
+                      <span class="rejection-reason-tag">Reason: {{ field.rejectionReason }}</span>
+                    </div>
+                  } @else {
+                    <input
+                      [id]="'field-input-' + field.key"
+                      type="text"
+                      [(ngModel)]="field.value"
+                      (input)="onFieldValueChange(field)"
+                      [disabled]="field.status === 'published'"
+                      placeholder="Enter value..."
+                      class="field-input"
+                    />
+                  }
+
+                  <!-- ORIGINAL VS CORRECTED DIFF DISPLAY (TASK 5A Item 1) -->
+                  @if (field.status === 'edited' && field.value !== field.originalValue) {
+                    <div class="edited-diff-label">
+                      <span class="orig">Original: "{{ field.originalValue }}"</span>
+                      <span class="arrow">➔</span>
+                      <span class="curr">Corrected: "{{ field.value }}"</span>
+                    </div>
+                  }
+
+                  <!-- C.3: SERVER VALIDATION RULE FAILURE ALERT -->
+                  @if (field.serverRuleFailure) {
+                    <div class="server-rule-failure-alert" role="alert">
+                      <div class="failure-msg-left">
+                        <span class="warn-symbol">⚠️</span>
+                        <span class="failure-text">{{ field.serverRuleFailure }}</span>
+                      </div>
+                      @if (canUserOverride) {
+                        <button type="button" class="btn-rule-override-mini" (click)="openRuleOverrideDialog(field); $event.stopPropagation()">
+                          🔑 Override Rule
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <!-- CARD FOOTER ACTIONS -->
+                <div class="card-bottom">
+                  <div class="field-actions">
+                    <button 
+                      type="button" 
+                      class="btn-act accept" 
+                      [class.active]="field.status === 'reviewer_confirmed'"
+                      (click)="acceptField(field); $event.stopPropagation()"
+                      title="Accept AI extraction"
+                    >
+                      ✓ Accept
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn-act edit" 
+                      [class.active]="field.status === 'edited'"
+                      (click)="openEditField(field); $event.stopPropagation()"
+                      title="Edit field value"
+                    >
+                      ✎ Edit
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn-act reject" 
+                      [class.active]="field.status === 'rejected'"
+                      (click)="openRejectModal(field); $event.stopPropagation()"
+                      title="Reject field value with reason"
+                    >
+                      ✕ Reject
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn-act history" 
+                      (click)="openHistoryDrawer(field); $event.stopPropagation()"
+                      title="View Correction History"
+                    >
+                      📜 History ({{ field.history?.length || 0 }})
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- TAB 2: LINE ITEMS TABLE EDITOR & MATH DISCREPANCY CELL HIGHLIGHTING (TASK 5B) -->
+      @if (activeTab === 'line-items') {
+        <div class="tab-scroll-body line-items-view">
+          @if (isArithmeticMatch) {
+            <div class="math-banner success">
+              <div class="banner-icon">✓</div>
+              <div class="banner-body">
+                <strong>Deterministic Math Fully Reconciled</strong>
+                <p>Line items sum + GST 18% matches grand invoice total of ₹{{ calculatedGrandTotal | number:'1.2-2' }}.</p>
+              </div>
+              <span class="zero-diff-badge">₹ 0.00 Discrepancy</span>
+            </div>
+          } @else {
+            <div class="math-banner warning">
+              <div class="banner-icon">⚠️</div>
+              <div class="banner-body">
+                <strong>Arithmetic Discrepancy Detected (BRD FR-009)</strong>
+                <p>Calculated line items total (₹{{ calculatedGrandTotal | number:'1.2-2' }}) differs from extracted invoice amount (₹{{ extractedGrandTotal | number:'1.2-2' }}).</p>
+              </div>
+              <button type="button" class="btn-reconcile" (click)="autoFixGrandTotal()">
+                Reconcile Total
+              </button>
+            </div>
+          }
+
+          <div class="line-items-box">
+            <div class="box-header">
+              <h3>Line Items Table Editor ({{ lineItems.length }})</h3>
+              <button type="button" class="btn-add-item" (click)="addLineItem()">+ Add Line Item</button>
+            </div>
+
+            <div class="table-scroll">
+              <table class="line-items-table">
+                <thead>
+                  <tr>
+                    <th>ITEM DESCRIPTION</th>
+                    <th class="num">QTY</th>
+                    <th class="num">UNIT RATE (₹)</th>
+                    <th class="num">TAX %</th>
+                    <th class="num">LINE TOTAL (₹)</th>
+                    <th class="text-right">ACT</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of lineItems; track item.id; let idx = $index) {
+                    <tr [class.discrepancy-row]="item.hasDiscrepancy">
+                      <td>
+                        <input type="text" [(ngModel)]="item.description" (input)="onItemChange(item)" class="table-input desc" />
+                      </td>
+                      <td class="num" [class.discrepancy-cell]="item.quantity <= 0">
+                        <input type="number" [(ngModel)]="item.quantity" (input)="onItemChange(item)" class="table-input qty" />
+                      </td>
+                      <td class="num" [class.discrepancy-cell]="item.unitPrice <= 0">
+                        <input type="number" [(ngModel)]="item.unitPrice" (input)="onItemChange(item)" class="table-input rate" />
+                      </td>
+                      <td class="num">
+                        <span class="tax-pill">{{ item.taxRate }}%</span>
+                      </td>
+                      <td class="num" [class.discrepancy-cell]="!isArithmeticMatch">
+                        <strong class="line-sum">₹ {{ item.lineTotal | number:'1.2-2' }}</strong>
+                      </td>
+                      <td class="text-right">
+                        <button type="button" class="btn-del" (click)="removeLineItem(idx)" title="Remove Row">×</button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="recalc-summary-card">
+            <h4>Live Arithmetic Discrepancy Breakdown</h4>
+            <div class="calc-row">
+              <span>Subtotal (Sum of Line Items):</span>
+              <strong>₹ {{ calculatedSubtotal | number:'1.2-2' }}</strong>
+            </div>
+            <div class="calc-row">
+              <span>IGST (Integrated GST @ 18%):</span>
+              <strong>₹ {{ calculatedTaxTotal | number:'1.2-2' }}</strong>
+            </div>
+            <div class="calc-divider"></div>
+            <div class="calc-row highlight">
+              <span>Calculated Net Amount:</span>
+              <strong class="text-green">₹ {{ calculatedGrandTotal | number:'1.2-2' }}</strong>
+            </div>
+            <div class="calc-row">
+              <span>Extracted Invoice Header Amount:</span>
+              <strong>₹ {{ extractedGrandTotal | number:'1.2-2' }}</strong>
+            </div>
+            <div class="calc-row diff" [class.has-diff]="!isArithmeticMatch">
+              <span>Arithmetic Discrepancy:</span>
+              <strong [class.red]="!isArithmeticMatch" [class.green]="isArithmeticMatch">
+                {{ isArithmeticMatch ? '✓ None (Exact Match)' : '₹ ' + (arithmeticDifference | number:'1.2-2') + ' Mismatch' }}
+              </strong>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 3: BLOCKING EXCEPTIONS & AI-004 MULTI-LOCATION CONFLICTS (TASK 5A Item 4) -->
+      @if (activeTab === 'exceptions') {
+        <div class="tab-scroll-body exceptions-view">
+          <div class="exceptions-header-summary">
+            <h3>Document Validation Exceptions Panel</h3>
+            <p>Mandatory exceptions block submission until an authorized approver/admin override is logged.</p>
+          </div>
+
+          <div class="exceptions-list">
+            @for (exc of exceptions; track exc.id) {
+              <div 
+                class="exception-card" 
+                [class.danger-card]="exc.severity === 'error' && !exc.isOverridden"
+                [class.overridden-card]="exc.isOverridden"
+              >
+                <div class="exc-top">
+                  <span class="exc-icon">{{ exc.severity === 'error' ? '🚫' : '⚠️' }}</span>
+                  <div class="exc-main">
+                    <h4>{{ exc.title }}</h4>
+                    <p>{{ exc.description }}</p>
+
+                    <!-- AI-004 CONFLICT LOCATIONS LINKS (TASK 5A Item 4) -->
+                    @if (exc.locations && exc.locations.length > 0) {
+                      <div class="conflict-locations-box">
+                        <span class="loc-title">Conflicting Source Locations (Click to Highlight Canvas):</span>
+                        <div class="loc-chips">
+                          @for (loc of exc.locations; track loc.locationName) {
+                            <button 
+                              type="button" 
+                              class="loc-chip-btn" 
+                              (click)="highlightConflictLocation(loc)"
+                              title="Highlight bounding box on canvas"
+                            >
+                              📍 Page {{ loc.page }}: {{ loc.locationName }} ({{ loc.value }})
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    }
+
+                    <!-- OVERRIDE STATUS DISPLAY -->
+                    @if (exc.isOverridden) {
+                      <div class="override-audit-badge">
+                        <span class="check">✓ Authorized Override Applied</span>
+                        <span class="meta">By {{ exc.overriddenBy }} at {{ exc.overriddenAt }}</span>
+                        <p class="reason">Reason: "{{ exc.overrideReason }}"</p>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="exc-action">
+                    @if (exc.requiresOverride && !exc.isOverridden) {
+                      <button 
+                        type="button" 
+                        class="btn-override-action" 
+                        (click)="openOverrideDialog(exc)"
+                      >
+                        🔑 Authorize Override
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- TAB 4: REVIEW HISTORY & AUDIT LOG (TASK 5A Item 9) -->
+      @if (activeTab === 'audit') {
+        <div class="tab-scroll-body audit-view">
+          <div class="audit-header">
+            <h3>Human-in-the-Loop Complete Audit Trail</h3>
+            <p>Every field edit, override, OCR retry, and classification change is timestamped.</p>
+          </div>
+
+          <div class="audit-timeline">
+            @for (log of auditLogs; track log.id) {
+              <div class="timeline-item">
+                <div class="item-dot" [class]="log.category"></div>
+                <div class="item-content">
+                  <div class="item-top">
+                    <strong>{{ log.action }}</strong>
+                    <span class="cat-badge {{ log.category }}">{{ log.category | uppercase }}</span>
+                  </div>
+                  <p class="details">{{ log.details }}</p>
+                  <span class="meta">{{ log.timestamp }} · By {{ log.actor }} ({{ log.role }})</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+    </section>
+
+  </main>
+  }
+
+  <!-- RIGHT SLIDE-OVER DRAWER: COMMENTS & CLARIFICATION (FR-011) -->
+  @if (isCommentsDrawerOpen) {
+    <div class="drawer-backdrop" (click)="isCommentsDrawerOpen = false"></div>
+    <aside class="comments-drawer" role="dialog" aria-label="Comments and Clarification Drawer">
+      <div class="drawer-header">
+        <h3>💬 Comments & Clarifications</h3>
+        <button type="button" class="btn-close-drawer" (click)="isCommentsDrawerOpen = false">×</button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- COMMENT INPUT BOX WITH @MENTIONS -->
+        <div class="comment-input-block">
+          <textarea
+            [(ngModel)]="commentText"
+            (input)="onCommentTextInput($event)"
+            placeholder="Write a comment or type @ to mention a teammate..."
+            rows="3"
+            class="comment-textarea"
+          ></textarea>
+
+          @if (showMentionDropdown) {
+            <div class="mention-dropdown">
+              <span class="mention-header">Mention Teammate:</span>
+              @for (u of availableUsers; track u.email) {
+                <button type="button" class="mention-item" (click)="insertMention(u)">
+                  <strong>{{ u.name }}</strong>
+                  <span>{{ u.role }}</span>
+                </button>
+              }
+            </div>
+          }
+
+          <div class="input-actions">
+            <button type="button" class="btn-clarification" (click)="requestClarification()">
+              ❓ Request Clarification
+            </button>
+            <button type="button" class="btn-send-comment" (click)="addComment()">
+              Post Comment
+            </button>
+          </div>
+        </div>
+
+        <!-- COMMENTS THREAD LIST -->
+        <div class="comments-thread-list">
+          @for (com of comments; track com.id) {
+            <div class="comment-card" [class.clarification]="com.isClarificationRequest">
+              <div class="com-top">
+                <div class="author-avatar">{{ com.avatar }}</div>
+                <div class="author-info">
+                  <strong>{{ com.author }}</strong>
+                  <span class="role-tag">{{ com.role }}</span>
+                  <span class="time">{{ com.timestamp }}</span>
+                </div>
+                <button 
+                  type="button" 
+                  class="btn-resolve-toggle" 
+                  (click)="toggleCommentResolved(com)"
+                >
+                  {{ com.isResolved ? '✓ Resolved' : 'Mark Resolved' }}
+                </button>
+              </div>
+              <p class="com-text">{{ com.text }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    </aside>
+  }
+
+  <!-- CORRECTION HISTORY DRAWER / POPOVER (TASK 5A Item 3) -->
+  @if (isHistoryDrawerOpen && selectedFieldHistory) {
+    <div class="drawer-backdrop" (click)="isHistoryDrawerOpen = false"></div>
+    <aside class="history-drawer" role="dialog" aria-label="Field Correction History">
+      <div class="drawer-header">
+        <h3>📜 Correction History: {{ selectedFieldHistory.label }}</h3>
+        <button type="button" class="btn-close-drawer" (click)="isHistoryDrawerOpen = false">×</button>
+      </div>
+      <div class="drawer-body">
+        <div class="history-list">
+          @for (h of selectedFieldHistory.history; track h.id) {
+            <div class="history-card">
+              <div class="h-top">
+                <strong>Corrected Value: "{{ h.correctedValue }}"</strong>
+                <span class="conf-badge">{{ h.confidence }}% Conf</span>
+              </div>
+              <p class="orig-val">Original Extraction: "{{ h.originalValue }}"</p>
+              <div class="h-meta">
+                <span>Actor: {{ h.actor }}</span>
+                <span>Timestamp: {{ h.timestamp }}</span>
+                <span>Engine: {{ h.extractionVersion }} ({{ h.modelVersion }})</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </aside>
+  }
+
+  <!-- AUTHORIZED OVERRIDE MODAL (TASK 5A Item 4) -->
+  @if (isOverrideModalOpen && selectedExceptionToOverride) {
+    <div class="modal-backdrop">
+      <div class="override-modal-card">
+        <h3>🔑 Authorized Exception Override</h3>
+        <p>You are requesting an authorized override for exception: <strong>"{{ selectedExceptionToOverride.title }}"</strong>.</p>
+
+        @if (!canUserOverride) {
+          <div class="role-warning-box">
+            <span class="warn-icon">🚫</span>
+            <div>
+              <strong>Role Restriction Warning</strong>
+              <p>Requires <strong>Approver</strong> or <strong>Org Admin</strong> role. You are currently logged in as {{ currentUserRole | uppercase }}.</p>
+            </div>
+          </div>
+        }
+
+        <div class="form-group">
+          <label>Mandatory Audit Reason for Override (Min 10 chars):</label>
+          <textarea
+            [(ngModel)]="overrideReasonText"
+            placeholder="Specify reason for overriding this exception..."
+            rows="3"
+            class="modal-textarea"
+          ></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="isOverrideModalOpen = false">Cancel</button>
+          <button 
+            type="button" 
+            class="btn-primary" 
+            [disabled]="!canUserOverride || overrideReasonText.trim().length < 10"
+            (click)="confirmOverrideException()"
+          >
+            Confirm & Log Audit Override
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- CLASSIFICATION CHANGE CONFIRMATION MODAL (FR-007) -->
+  @if (isClassificationModalOpen) {
+    <div class="modal-backdrop">
+      <div class="classification-modal-card">
+        <h3>⚠️ Change Document Classification</h3>
+        <p>Changing document type from <strong>{{ documentType }}</strong> to <strong>{{ targetDocType }}</strong> will re-run extraction under the target schema. Unsaved field edits will be overwritten.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="cancelClassificationChange()">Cancel</button>
+          <button type="button" class="btn-primary danger" (click)="confirmClassificationChange()">
+            Re-Extract Under {{ targetDocType }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- REJECT FIELD REASON MODAL (TASK 5A Item 2) -->
+  @if (isRejectModalOpen && selectedFieldToReject) {
+    <div class="modal-backdrop">
+      <div class="reject-modal-card">
+        <h3>✕ Reject Field Value</h3>
+        <p>Rejecting value for <strong>{{ selectedFieldToReject.label }}</strong>. Rejected value will remain visible as struck-through.</p>
+        <div class="form-group">
+          <label>Select or Enter Rejection Reason:</label>
+          <select [(ngModel)]="rejectReasonText" class="modal-select">
+            <option value="Illegible OCR / Text noise">Illegible OCR / Text noise</option>
+            <option value="Incorrect bounding box region">Incorrect bounding box region</option>
+            <option value="Value missing from original source">Value missing from original source</option>
+            <option value="Invalid date / format structure">Invalid date / format structure</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="isRejectModalOpen = false">Cancel</button>
+          <button type="button" class="btn-primary danger" (click)="confirmRejectField()">Reject Field Value</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- KEYBOARD SHORTCUTS HELP MODAL (TASK 5B Keyboard Accessibility) -->
+  @if (isShortcutHelpOpen) {
+    <div class="modal-backdrop" (click)="isShortcutHelpOpen = false">
+      <div class="shortcuts-modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>⌨️ Keyboard Shortcuts Reference</h3>
+          <button type="button" class="btn-close-modal" (click)="isShortcutHelpOpen = false">×</button>
+        </div>
+        <div class="shortcuts-grid">
+          <div class="shortcut-row"><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> <span>Navigate between canvas bounding boxes</span></div>
+          <div class="shortcut-row"><kbd>Enter</kbd> <span>Select active box and focus corresponding form input</span></div>
+          <div class="shortcut-row"><kbd>Escape</kbd> <span>Clear active selection / Close drawers</span></div>
+          <div class="shortcut-row"><kbd>?</kbd> <span>Toggle this keyboard shortcuts dialog</span></div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MANUAL TRANSCRIPTION SIDE PANEL (FR-012) -->
+  @if (isManualTranscriptionOpen) {
+    <div class="drawer-backdrop" (click)="isManualTranscriptionOpen = false"></div>
+    <aside class="manual-transcription-panel" role="dialog">
+      <div class="panel-header">
+        <h3>✍️ Manual Page Transcription (Page {{ currentPage }})</h3>
+        <button type="button" class="btn-close-drawer" (click)="isManualTranscriptionOpen = false">×</button>
+      </div>
+      <div class="panel-body">
+        <p>Type missing or unreadable text from Page {{ currentPage }} image scan directly into the field below:</p>
+        <textarea
+          [(ngModel)]="manualTranscriptionText"
+          placeholder="Enter extracted text manually..."
+          rows="10"
+          class="manual-textarea"
+        ></textarea>
+        <div class="panel-actions">
+          <button type="button" class="btn-secondary" (click)="isManualTranscriptionOpen = false">Cancel</button>
+          <button type="button" class="btn-primary" (click)="saveManualTranscription()">Save Transcription</button>
+        </div>
+      </div>
+    </aside>
+  }
+
+  <!-- C.3: SERVER RULE FAILURE OVERRIDE MODAL -->
+  @if (isRuleOverrideModalOpen && selectedFieldForRuleOverride) {
+    <div class="modal-backdrop" (click)="isRuleOverrideModalOpen = false">
+      <div class="override-modal-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <h3>🔑 Authorize Rule Failure Override</h3>
+          <button type="button" class="btn-close-modal" (click)="isRuleOverrideModalOpen = false">×</button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Field:</strong> {{ selectedFieldForRuleOverride.label }}</p>
+          <div class="failure-detail-box">
+            <span class="label">Rule Failure:</span>
+            <p class="val">{{ selectedFieldForRuleOverride.serverRuleFailure }}</p>
+          </div>
+          <label class="form-label" for="ruleOverrideReasonInput">
+            Audited Override Justification (Required):
+          </label>
+          <textarea
+            id="ruleOverrideReasonInput"
+            [(ngModel)]="ruleOverrideReason"
+            placeholder="Document why this business rule failure is being overridden..."
+            rows="3"
+            class="override-textarea"
+          ></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="isRuleOverrideModalOpen = false">Cancel</button>
+          <button type="button" class="btn-primary" (click)="confirmRuleOverride()" [disabled]="ruleOverrideReason.trim().length < 5">
+            Confirm & Override Rule
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- TOAST POPUP NOTIFICATION -->
+  @if (toastMessage) {
+    <div class="toast-popup" [class]="toastType">
+      <span>{{ toastMessage }}</span>
+    </div>
+  }
+
+</div>

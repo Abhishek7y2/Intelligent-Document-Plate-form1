@@ -1,0 +1,86 @@
+=== AUDIT EVIDENCE: STEP 2 CLAIM 10 - ROLE NAMES AUDIT ===
+
+Canonical Roles defined in BRD: platform_operator, org_admin, contributor, reviewer, approver, auditor
+
+Status: FALSE (The claim that non-canonical roles were eliminated is FALSE).
+
+Summary of Non-Canonical Role occurrences across codebase:
+Total non-canonical occurrences found: 77
+
+  backend/src/controllers/auth.controller.ts:388 [Analyst]: 'Analyst',
+  backend/src/controllers/auth.controller.ts:399 [Analyst]: { role: 'Analyst', label: 'Analyst', canOverrideValidation: false, description: 'Document querying, comparison, and analysis' },
+  backend/src/controllers/schema.controller.spec.ts:238 [Analyst]: user: { userId: 'USR-ANALYST-01', tenantId: 'TNT-CORP-01', role: 'Analyst', permissions: ['SCHEMA_VIEW'] },
+  backend/src/controllers/user.controller.ts:160 [FinanceHead]: 'Admin', 'Reviewer', 'Approver', 'FinanceHead', 'Analyst', 'Auditor',
+  backend/src/controllers/user.controller.ts:160 [Analyst]: 'Admin', 'Reviewer', 'Approver', 'FinanceHead', 'Analyst', 'Auditor',
+  backend/src/database/migrations/001_initial_schema.sql:28 [Analyst]: role VARCHAR(50) NOT NULL CHECK (role IN ('Admin', 'Reviewer', 'Analyst', 'Auditor')),
+  backend/src/database/migrations/002_identity_and_sessions.sql:11 [Analyst]: role VARCHAR(50) NOT NULL CHECK (role IN ('Admin', 'Reviewer', 'Analyst', 'Auditor')),
+  backend/src/database/migrations/016_security_and_roles.sql:15 [FinanceHead]: 'Admin', 'Reviewer', 'Approver', 'FinanceHead', 'Analyst', 'Auditor',
+  backend/src/database/migrations/016_security_and_roles.sql:15 [Analyst]: 'Admin', 'Reviewer', 'Approver', 'FinanceHead', 'Analyst', 'Auditor',
+  backend/src/database/migrations/016_security_and_roles.sql:24 [FinanceHead]: 'Admin', 'Reviewer', 'Approver', 'FinanceHead', 'Analyst', 'Auditor',
+  backend/src/database/migrations/016_security_and_roles.sql:24 [Analyst]: 'Admin', 'Reviewer', 'Approver', 'FinanceHead', 'Analyst', 'Auditor',
+  backend/src/models/auth.models.ts:9 [FinanceHead]: export type LegacyRole = 'Admin' | 'Reviewer' | 'Approver' | 'FinanceHead' | 'Analyst' | 'Auditor';
+  backend/src/models/auth.models.ts:9 [Analyst]: export type LegacyRole = 'Admin' | 'Reviewer' | 'Approver' | 'FinanceHead' | 'Analyst' | 'Auditor';
+  backend/src/models/auth.models.ts:132 [FinanceHead]: FinanceHead: [
+  backend/src/models/auth.models.ts:154 [Analyst]: Analyst: [
+  backend/src/services/approval.service.spec.ts:21 [Analyst]: role: 'Analyst',
+  backend/src/services/approval.service.spec.ts:53 [FinanceHead]: role: 'FinanceHead',
+  backend/src/services/approval.service.spec.ts:356 [FinanceHead]: it('should mandate FinanceHead or Admin executive sign-off for Tier 3 (>$50k)', async () => {
+  backend/src/services/approval.service.spec.ts:378 [FinanceHead]: // Step 2: FinanceHead signs -> success!
+  backend/src/services/approval.service.ts:81 [FinanceHead]: * - Above $50,000 (> 50000.00): Tier 3 (2 Approvers, Executive/FinanceHead required)
+  backend/src/services/approval.service.ts:337 [FinanceHead]: const isExecutive = user.role === 'Admin' || user.role === 'FinanceHead';
+  backend/src/services/approval.service.ts:341 [FinanceHead]: (d) => d.approverRole === 'Admin' || d.approverRole === 'FinanceHead'
+  backend/src/services/approval.service.ts:345 [FinanceHead]: `Tier 3 approval ($> $50,000) mandates at least one FinanceHead or Admin executive signature.`,
+  backend/src/services/auth.service.spec.ts:146 [Analyst]: full_name: 'Risk Analyst',
+  backend/src/services/auth.service.ts:60 [Org Admin]: full_name: 'Org Admin',
+  backend/src/services/export.service.ts:366 [Analyst]: const allowedExportRoles = ['Admin', 'Reviewer', 'Analyst', 'Auditor', 'approver', 'org_admin'];
+  backend/src/services/invitation.service.ts:13 [Analyst]: 'Analyst',
+  backend/src/services/qa.service.spec.ts:170 [Analyst]: 'Analyst',
+  backend/src/services/qa.service.spec.ts:208 [Analyst]: QaService.verifyCitationAccess(TENANT_A, 'Analyst', 'DOC-10248', 'CITE-TEST-01')
+  backend/src/services/rbac-verification.spec.ts:153 [Org Admin]: it('should allow Org Admin full schema management and deny Reviewer & Auditor', () => {
+  backend/src/services/release-sprint13.spec.ts:26 [Analyst]: role: 'Analyst',
+  backend/src/services/release-sprint13.spec.ts:385 [Analyst]: const authCheck = await QaService.verifyCitationAccess(TENANT_ALPHA, 'Analyst', docId, 'CITE-01');
+  backend/src/services/review.service.ts:457 [FinanceHead]: const permittedRoles = ['Admin', 'org_admin', 'approver', 'Approver', 'FinanceHead'];
+  backend/src/services/sprint6-hardening-governance.spec.ts:35 [Analyst]: const userAnalystA: AuthenticatedUser = {
+  backend/src/services/sprint6-hardening-governance.spec.ts:38 [Analyst]: role: 'Analyst',
+  backend/src/services/sprint6-hardening-governance.spec.ts:99 [Analyst]: user_id: userAnalystA.userId,
+  backend/src/services/sprint6-hardening-governance.spec.ts:101 [Analyst]: email: userAnalystA.email,
+  backend/src/services/sprint6-hardening-governance.spec.ts:102 [Analyst]: full_name: 'Analyst A',
+  backend/src/services/sprint6-hardening-governance.spec.ts:103 [Analyst]: role: userAnalystA.role,
+  backend/src/services/sprint6-hardening-governance.spec.ts:223 [Analyst]: // Configure rule: mask 'tax_id' and 'account_number' for Analyst role
+  backend/src/services/sprint6-hardening-governance.spec.ts:227 [Analyst]: maskedForRoles: ['Analyst', 'Reviewer'],
+  backend/src/services/sprint6-hardening-governance.spec.ts:233 [Analyst]: maskedForRoles: ['Analyst'],
+  backend/src/services/sprint6-hardening-governance.spec.ts:241 [Analyst]: // Request as Analyst
+  backend/src/services/sprint6-hardening-governance.spec.ts:244 [Analyst]: userAnalystA.role,
+  backend/src/services/sprint6-hardening-governance.spec.ts:298 [Analyst]: role: 'Analyst',
+  backend/src/services/sprint6-hardening-governance.spec.ts:307 [Analyst]: role: 'Analyst',
+  backend/src/services/sprint6-hardening-governance.spec.ts:506 [Analyst]: maskedForRoles: ['Analyst'],
+  backend/src/services/sprint8-gap-fixes.spec.ts:15 [Analyst]: 'Analyst',
+  backend/src/services/sprint8-gap-fixes.spec.ts:77 [Analyst]: expect(responseJson.roles).toContain('Analyst');
+  backend/src/services/user-mfa-versioning.spec.ts:87 [Analyst]: role: 'Analyst',
+  backend/src/services/user-mfa-versioning.spec.ts:93 [Analyst]: expect(result.role).toBe('Analyst');
+  backend/src/services/user-mfa-versioning.spec.ts:105 [Analyst]: 'Analyst'
+  document-intelligence-ui/src/app/core/guards/role-guard.spec.ts:77 [Analyst]: it('allows Admin to access admin routes and blocks Analyst/Reviewer from admin routes', () => {
+  document-intelligence-ui/src/app/core/guards/role-guard.spec.ts:85 [Analyst]: // Analyst user
+  document-intelligence-ui/src/app/core/guards/role-guard.spec.ts:86 [Analyst]: const analystRole = normalizeRole('Analyst');
+  document-intelligence-ui/src/app/core/guards/role-guard.spec.ts:87 [Analyst]: const isAnalystAllowed = allowedRoles.includes(analystRole) || allowedRoles.includes('Analyst');
+  document-intelligence-ui/src/app/core/guards/role-guard.spec.ts:88 [Analyst]: expect(isAnalystAllowed).toBe(false);
+  document-intelligence-ui/src/app/core/models/roles.ts:22 [Org Admin]: name: 'Org Admin',
+  document-intelligence-ui/src/app/core/services/http-admin.service.ts:74 [Analyst]: 'Analyst',
+  document-intelligence-ui/src/app/core/services/http-admin.service.ts:88 [Analyst]: 'Analyst',
+  document-intelligence-ui/src/app/core/services/http-retention.service.ts:96 [Org Admin]: placedBy: 'Abhishek Yadav (Org Admin)',
+  document-intelligence-ui/src/app/features/admin/sub-pages/admin-operations/admin-operations.ts:190 [Org Admin]: <label>First Tenant Org Admin Email:</label>
+  document-intelligence-ui/src/app/features/admin/sub-pages/admin-retention/admin-retention.ts:288 [Org Admin]: { id: 'lh-1', holdName: 'Acme vs Global Logistics Arbitration', matterNumber: 'LIT-2026-889', reason: 'Subpoena issued for supplier agreement records', placedBy: 'Abhishek Yadav (Org Admin)', placedDate: '02 Oct 2026', scopeCount: 14, status: 'active' },
+  document-intelligence-ui/src/app/features/admin/sub-pages/admin-retention/admin-retention.ts:398 [Org Admin]: placedBy: 'Abhishek Yadav (Org Admin)',
+  document-intelligence-ui/src/app/features/admin/sub-pages/admin-security/admin-security.ts:35 [Org Admin]: <strong>Require MFA for Privileged Roles</strong> (Org Admin, Approver, Platform Operator)
+  document-intelligence-ui/src/app/features/admin/sub-pages/admin-users/admin-users.ts:268 [Analyst]: { role: 'Analyst', label: 'Analyst (Query & Analysis)' },
+  document-intelligence-ui/src/app/features/dashboard/dashboard.ts:300 [Org Admin]: const currentName = this.authService.currentUser()?.name || 'Org Admin User';
+  document-intelligence-ui/src/app/features/intake/intake.ts:862 [Senior Reviewer]: item.errorReason = 'Routed to Senior Reviewer for manual field transcription.';
+  document-intelligence-ui/src/app/features/profile/profile.html:554 [Org Admin]: <option value="Org Admin">Org Admin</option>
+  document-intelligence-ui/src/app/features/profile/profile.spec.ts:31 [Org Admin]: expect(data.role).toBe('Org Admin');
+  document-intelligence-ui/src/app/features/profile/profile.ts:84 [Org Admin]: role: 'Org Admin',
+  document-intelligence-ui/src/app/features/profile/profile.ts:113 [Org Admin]: const roleDisplayName = user.role === 'org_admin' ? 'Org Admin' : (user.role || 'Org Admin');
+  document-intelligence-ui/src/app/features/review/review-workbench/review-workbench.html:876 [Org Admin]: <p>Requires <strong>Approver</strong> or <strong>Org Admin</strong> role. You are currently logged in as {{ currentUserRole | uppercase }}.</p>
+  document-intelligence-ui/src/app/features/review/review-workbench/review-workbench.ts:257 [Approver / Finance Head]: { name: 'Priya Mehta', role: 'Approver / Finance Head', email: 'priya@acme.com' },
+  document-intelligence-ui/src/app/features/review/review-workbench/review-workbench.ts:258 [Senior Auditor]: { name: 'Ankit Verma', role: 'Senior Auditor', email: 'ankit@acme.com' },
+  document-intelligence-ui/src/app/features/review/review-workbench/review-workbench.ts:842 [Senior Reviewer]: this.showToast(`Escalated OCR issue on Page ${pageInfo.page} to Senior Reviewer team`, 'warning');
+  document-intelligence-ui/src/app/features/review/review-workbench/review-workbench.ts:843 [Senior Reviewer]: this.addAuditLog('OCR Escalation', `Escalated unreadable Page ${pageInfo.page} scan anomaly to Senior Reviewer`, 'ocr');

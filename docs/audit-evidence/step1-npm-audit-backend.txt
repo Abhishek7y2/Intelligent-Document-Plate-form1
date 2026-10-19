@@ -1,0 +1,8 @@
+$ npm audit (backend)
+36 vulnerabilities (5 moderate, 31 high)
+Vulnerabilities:
+- braces: uncontrolled resource consumption / regular expression DoS
+  Affecting: chokidar, ts-node-dev, micromatch, @jest/core, jest, @jest/transform, jest-config, jest-runner, jest-runtime, jest-circus, jest-snapshot, jest-resolve-dependencies, jest-haste-map, jest-message-util, @jest/console, @jest/test-result, jest-watcher, @jest/fake-timers, @jest/environment, @jest/globals, jest-environment-node, expect, @jest/expect, @types/jest
+- sprintf-js: denial of service through unbounded precision specifiers (GHSA-hp3w-g68c-fv3c)
+  Affecting: argparse, js-yaml, @istanbuljs/load-nyc-config, babel-plugin-istanbul
+Exit code: 1

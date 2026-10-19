@@ -1,0 +1,21 @@
+$ npm run migrate:drill
+
+> docunexa-backend@1.0.0 migrate:drill
+> node --loader ts-node/esm scripts/verify-migrations-and-rollbacks.ts
+
+Error [ERR_REQUIRE_CYCLE_MODULE]: Cannot require() ES Module C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\scripts\verify-migrations-and-rollbacks.ts in a cycle.
+Node.js v22.15.0
+Exit code: 1
+
+$ npx ts-node scripts/verify-migrations-and-rollbacks.ts
+[MIGRATION & ROLLBACK DRILL] Starting automated verification...
+[FATAL] Migration & Rollback verification failed: Error: connect ECONNREFUSED 127.0.0.1:5434
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '127.0.0.1',
+  port: 5434
+}
+Exit code: 1
+Reason: PostgreSQL 16 sandbox container is unreachable (Docker daemon is not running).

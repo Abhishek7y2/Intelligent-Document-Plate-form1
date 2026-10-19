@@ -1,0 +1,803 @@
+<div class="docunexa-dashboard-canvas">
+  <!-- LOADING / ERROR STATES -->
+  @if (isLoading()) {
+    <app-loading-state layout="dashboard" message="Fetching live dashboard metrics and pipeline funnel stats..."></app-loading-state>
+  } @else if (hasError()) {
+    <app-error-state
+      title="Unable to load dashboard stats"
+      message="We encountered an issue fetching real-time document workspace metrics."
+      (retry)="loadData()"
+    ></app-error-state>
+  } @else {
+    <!-- =========================================================================
+         SECTION 1: DASHBOARD HEADER & QUICK ACTION BAR
+         ========================================================================= -->
+    <div class="dashboard-header-panel">
+      <div class="header-main-flex">
+        <!-- Title & Greeting -->
+        <div class="header-left-col">
+          <h1 class="page-main-heading">
+            Dashboard
+          </h1>
+          <p class="greeting-lead-text">
+            {{ greetingPrefix }}, <strong class="user-highlight">{{ userName }}</strong> 👋 — Here's what's happening across your document workspace.
+          </p>
+        </div>
+
+        <!-- Controls: Team Checkbox & Search Input -->
+        <div class="header-right-controls">
+          <label class="team-doc-toggle">
+            <input type="checkbox" [(ngModel)]="includeTeamDocs" />
+            <span class="custom-checkbox-ui">✓</span>
+            <span class="label-text">Include Team Documents</span>
+          </label>
+
+          <div class="search-input-capsule">
+            <span class="search-glass-icon">🔍</span>
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              (keyup.enter)="onSearchSubmit()"
+              placeholder="Search user / document."
+              class="quick-search-box"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Row: Filter Pills + Primary Action Button -->
+      <div class="header-actions-row">
+        <div class="category-pills-row">
+          <button type="button" class="btn-filter-pill" (click)="filterByCategory('Supplier Contracts')">Contracts</button>
+          <button type="button" class="btn-filter-pill" (click)="filterByCategory('Purchase Invoices')">Invoices</button>
+          <button type="button" class="btn-filter-pill" routerLink="/search">RAG Search</button>
+          <button type="button" class="btn-filter-pill" routerLink="/intake">Upload Batch</button>
+        </div>
+
+        <div class="primary-cta-container">
+          <button type="button" class="btn-primary-process" routerLink="/intake">
+            <span class="plus-sign">+</span> Process New Document
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         SLA BREACH WARNING BANNER (SHOWN WHEN REAL DOCUMENTS NEED REVIEW)
+         ========================================================================= -->
+    @if (urgentSlaDocs.length > 0 && (userRole === 'reviewer' || userRole === 'approver' || userRole === 'org_admin')) {
+      <div class="sla-warning-banner">
+        <div class="sla-banner-body">
+          <div class="sla-clock-icon-wrapper">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <div class="sla-text-content">
+            <h4 class="sla-headline">SLA Warning: {{ urgentSlaDocs.length }} Document(s) Approaching Review SLA Threshold (&lt; 4h remaining)</h4>
+            <p class="sla-detail">
+              @for (doc of urgentSlaDocs; track doc.id; let last = $last) {
+                <strong>{{ doc.id }}</strong> ({{ doc.name }}){{ last ? '' : ', ' }}
+              }
+              requires reviewer sign-off within 3.5 hours to prevent SLA compliance breach (FR-021).
+            </p>
+          </div>
+        </div>
+        <a routerLink="/review" class="btn-urgent-review">
+          Review Urgent Queue ›
+        </a>
+      </div>
+    }
+
+    <!-- =========================================================================
+         SECTION 2: DOCUNEXA'S ACHIEVEMENTS (REAL 6 KPI CARDS)
+         ========================================================================= -->
+    <section class="achievements-section">
+      <div class="achievements-title-bar">
+        <h2 class="section-title-heading">DocNexa's Achievements</h2>
+        <span class="section-timestamp">Data as on {{ currentDateStr }}</span>
+      </div>
+
+      <div class="stats-grid-row">
+        <!-- 1. Total Documents -->
+        <div class="stat-card theme-purple clickable" (click)="drillDown('/documents', { filter: 'all' })">
+          <div class="card-content-area">
+            <div class="card-icon-and-label">
+              <div class="icon-bubble purple">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+              </div>
+              <span class="card-label-title">Total Documents</span>
+            </div>
+            <div class="card-metric-value">{{ totalDocsCount | number }}</div>
+            <div class="card-trend-badge">
+              <span class="trend-green">↑ 12.5%</span>
+            </div>
+          </div>
+          <div class="sparkline-bottom-container">
+            <svg viewBox="0 0 200 48" preserveAspectRatio="none" class="sparkline-vector">
+              <defs>
+                <linearGradient id="purpleGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.30"/>
+                  <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,36 C35,38 50,16 85,24 C120,32 150,14 200,28 L200,48 L0,48 Z" fill="url(#purpleGrad)"/>
+              <path d="M0,36 C35,38 50,16 85,24 C120,32 150,14 200,28" fill="none" stroke="#8b5cf6" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 2. Active Processing -->
+        <div class="stat-card theme-blue clickable" (click)="drillDown('/documents', { status: 'Processing' })">
+          <div class="card-content-area">
+            <div class="card-icon-and-label">
+              <div class="icon-bubble blue">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+              </div>
+              <span class="card-label-title">Active Processing</span>
+            </div>
+            <div class="card-metric-value">{{ activeProcessingCount | number }}</div>
+            <div class="card-trend-badge">
+              <span class="trend-green">↑ 18%</span>
+            </div>
+          </div>
+          <div class="sparkline-bottom-container">
+            <svg viewBox="0 0 200 48" preserveAspectRatio="none" class="sparkline-vector">
+              <defs>
+                <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.30"/>
+                  <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,38 C30,38 60,18 100,28 C140,38 170,12 200,20 L200,48 L0,48 Z" fill="url(#blueGrad)"/>
+              <path d="M0,38 C30,38 60,18 100,28 C140,38 170,12 200,20" fill="none" stroke="#3b82f6" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 3. Extracted Entities -->
+        <div class="stat-card theme-green clickable" (click)="drillDown('/reports', { tab: 'quality' })">
+          <div class="card-content-area">
+            <div class="card-icon-and-label">
+              <div class="icon-bubble green">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 8v8"></path>
+                  <path d="M8 12h8"></path>
+                </svg>
+              </div>
+              <span class="card-label-title">Extracted Entities</span>
+            </div>
+            <div class="card-metric-value">{{ extractedEntitiesCount | number }}</div>
+            <div class="card-trend-badge">
+              <span class="trend-green">↑ 24%</span>
+            </div>
+          </div>
+          <div class="sparkline-bottom-container">
+            <svg viewBox="0 0 200 48" preserveAspectRatio="none" class="sparkline-vector">
+              <defs>
+                <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.30"/>
+                  <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,32 C40,32 65,14 110,22 C150,30 170,10 200,16 L200,48 L0,48 Z" fill="url(#greenGrad)"/>
+              <path d="M0,32 C40,32 65,14 110,22 C150,30 170,10 200,16" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 4. Review Queue -->
+        <div class="stat-card theme-orange clickable" (click)="drillDown('/review', {})">
+          <div class="card-content-area">
+            <div class="card-icon-and-label">
+              <div class="icon-bubble orange">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+              </div>
+              <span class="card-label-title">Review Queue</span>
+            </div>
+            <div class="card-metric-value">{{ reviewQueueCount | number }}</div>
+            <div class="card-trend-badge">
+              <span class="trend-green">↑ 22%</span>
+            </div>
+          </div>
+          <div class="sparkline-bottom-container">
+            <svg viewBox="0 0 200 48" preserveAspectRatio="none" class="sparkline-vector">
+              <defs>
+                <linearGradient id="orangeGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f97316" stop-opacity="0.30"/>
+                  <stop offset="100%" stop-color="#f97316" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,35 C35,35 60,18 100,24 C140,30 165,12 200,22 L200,48 L0,48 Z" fill="url(#orangeGrad)"/>
+              <path d="M0,35 C35,35 60,18 100,24 C140,30 165,12 200,22" fill="none" stroke="#f97316" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 5. Pending Approvals -->
+        <div class="stat-card theme-amber clickable" (click)="drillDown('/approvals', {})">
+          <div class="card-content-area">
+            <div class="card-icon-and-label">
+              <div class="icon-bubble amber">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+              </div>
+              <span class="card-label-title">Pending Approvals</span>
+            </div>
+            <div class="card-metric-value">{{ pendingApprovalsCount | number }}</div>
+            <div class="card-trend-badge">
+              <span class="trend-green">↑ 15%</span>
+            </div>
+          </div>
+          <div class="sparkline-bottom-container">
+            <svg viewBox="0 0 200 48" preserveAspectRatio="none" class="sparkline-vector">
+              <defs>
+                <linearGradient id="amberGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.30"/>
+                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,36 C45,36 70,16 115,26 C155,34 175,18 200,24 L200,48 L0,48 Z" fill="url(#amberGrad)"/>
+              <path d="M0,36 C45,36 70,16 115,26 C155,34 175,18 200,24" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 6. Indexed Repository -->
+        <div class="stat-card theme-teal clickable" (click)="drillDown('/documents', { status: 'Published' })">
+          <div class="card-content-area">
+            <div class="card-icon-and-label">
+              <div class="icon-bubble teal">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              </div>
+              <span class="card-label-title">Indexed Repository</span>
+            </div>
+            <div class="card-metric-value">{{ indexedRepoCount | number }}</div>
+            <div class="card-trend-badge">
+              <span class="trend-green">↑ 14%</span>
+            </div>
+          </div>
+          <div class="sparkline-bottom-container">
+            <svg viewBox="0 0 200 48" preserveAspectRatio="none" class="sparkline-vector">
+              <defs>
+                <linearGradient id="tealGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#14b8a6" stop-opacity="0.30"/>
+                  <stop offset="100%" stop-color="#14b8a6" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,34 C40,34 65,14 110,25 C150,32 170,12 200,18 L200,48 L0,48 Z" fill="url(#tealGrad)"/>
+              <path d="M0,34 C40,34 65,14 110,25 C150,32 170,12 200,18" fill="none" stroke="#14b8a6" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION 3: TWO-COLUMN DATA OVERVIEW
+         ========================================================================= -->
+    <section class="overview-dual-tables-grid">
+      <!-- LEFT PANEL: Category Ingestion Overview -->
+      <div class="enterprise-panel-card">
+        <div class="panel-card-header">
+          <div class="panel-header-titles">
+            <h3 class="panel-card-title">Category Ingestion Overview</h3>
+            <span class="panel-card-subtitle">Live breakdown by document category</span>
+          </div>
+          <a routerLink="/documents" class="panel-header-action-link">View All Categories ›</a>
+        </div>
+
+        <div class="mobile-table-hint">‹ Swipe horizontally to view all columns ›</div>
+
+        <div class="table-scroller">
+          <table class="enterprise-styled-table">
+            <thead>
+              <tr>
+                <th class="th-category">
+                  <span class="col-text-full">DOCUMENT CATEGORY</span>
+                  <span class="col-text-short">CATEGORY</span>
+                </th>
+                <th class="th-active">
+                  <span class="col-text-full">ACTIVE</span>
+                  <span class="col-text-short">ACT</span>
+                </th>
+                <th class="th-extracted">
+                  <span class="col-text-full">EXTRACTED</span>
+                  <span class="col-text-short">EXT</span>
+                </th>
+                <th class="th-approved">
+                  <span class="col-text-full">APPROVED</span>
+                  <span class="col-text-short">APP</span>
+                </th>
+                <th class="th-archived">
+                  <span class="col-text-full">ARCHIVED</span>
+                  <span class="col-text-short">ARC</span>
+                </th>
+                <th class="th-accuracy">
+                  <span class="col-text-full">ACCURACY</span>
+                  <span class="col-text-short">ACC</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (categoryOverview.length === 0) {
+                <tr>
+                  <td colspan="6" class="text-center py-6 text-muted">No documents ingested in current workspace.</td>
+                </tr>
+              } @else {
+                <tr *ngFor="let item of categoryOverview" class="clickable-row" (click)="filterByCategory(item.name)">
+                  <td class="td-category-name font-semibold">{{ item.name }}</td>
+                  <td class="td-active-count">
+                    <span class="badge-pill-blue">{{ item.activeIngestion }}</span>
+                  </td>
+                  <td class="td-extracted-count text-muted">{{ item.extractedFields }}</td>
+                  <td class="td-approved-count">
+                    <span class="badge-pill-green">{{ item.approvedDocs }}</span>
+                  </td>
+                  <td class="td-archived-count text-muted">{{ item.archivedCount }}</td>
+                  <td class="td-accuracy-indicator">
+                    <div class="accuracy-indicator-flex">
+                      <span class="acc-capsule-bar" [style.background-color]="getAccuracyBarColor(item.accuracy)"></span>
+                      <span class="acc-text-pct">{{ item.accuracy }}%</span>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL: Top Document Reviewers -->
+      <div class="enterprise-panel-card">
+        <div class="panel-card-header">
+          <div class="panel-header-titles">
+            <h3 class="panel-card-title">Top Document Reviewers</h3>
+            <span class="panel-card-subtitle">Performance and accuracy rankings</span>
+          </div>
+          <a routerLink="/admin/users" class="panel-header-action-link">Manage Team ›</a>
+        </div>
+
+        <div class="mobile-table-hint">‹ Swipe horizontally to view all columns ›</div>
+
+        <div class="table-scroller">
+          <table class="enterprise-styled-table">
+            <thead>
+              <tr>
+                <th class="th-reviewer-rank">
+                  <span class="col-text-full">RANK & REVIEWER</span>
+                  <span class="col-text-short">REVIEWER</span>
+                </th>
+                <th class="th-assigned">
+                  <span class="col-text-full">ASSIGNED</span>
+                  <span class="col-text-short">ASG</span>
+                </th>
+                <th class="th-verified">
+                  <span class="col-text-full">VERIFIED</span>
+                  <span class="col-text-short">VER</span>
+                </th>
+                <th class="th-acc-rate">
+                  <span class="col-text-full">ACCURACY</span>
+                  <span class="col-text-short">ACC</span>
+                </th>
+                <th class="th-target-achieved">
+                  <span class="col-text-full">TARGET %</span>
+                  <span class="col-text-short">TGT %</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (reviewerRankings.length === 0) {
+                <tr>
+                  <td colspan="5" class="text-center py-6 text-muted">No reviewer assignments recorded yet.</td>
+                </tr>
+              } @else {
+                <tr *ngFor="let rev of reviewerRankings" class="clickable-row" (click)="drillDown('/review', { assignee: rev.name })">
+                  <td class="td-reviewer-info">
+                    <div class="reviewer-identity-group">
+                      <span class="ranking-pill-badge" [ngClass]="'rank-' + rev.rank">#{{ rev.rank }}</span>
+                      <div class="reviewer-avatar-circle" [style.background-color]="rev.avatarBg">
+                        {{ rev.initials }}
+                      </div>
+                      <span class="reviewer-display-name">{{ rev.name }}</span>
+                    </div>
+                  </td>
+                  <td class="td-assigned-count text-muted">{{ rev.assignedQueue }}</td>
+                  <td class="td-verified-count font-bold">{{ rev.verifiedCount }}</td>
+                  <td class="td-acc-rate-badge">
+                    <span class="badge-pill-green">{{ rev.accuracyRate }}%</span>
+                  </td>
+                  <td class="td-target-value">
+                    <span class="target-pct-label" [ngClass]="getTargetColorClass(rev.targetAchieved)">
+                      {{ rev.targetAchieved }}%
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION 3.5: DEDICATED PROCESSING & QUALITY ANALYTICS SECTION
+         ========================================================================= -->
+    <section class="processing-analytics-section">
+      <div class="analytics-main-card">
+        <!-- Section Header -->
+        <div class="analytics-header-row">
+          <div class="analytics-header-titles">
+            <h2 class="analytics-main-heading">Processing & Quality Analytics</h2>
+            <p class="analytics-sub-heading">Document processing trends, AI extraction quality, SLA performance and exception analysis.</p>
+          </div>
+          <div class="analytics-header-filter">
+            <div class="date-dropdown-capsule">
+              <span class="icon-calendar">📅</span>
+              <select [(ngModel)]="selectedAnalyticsRange" class="select-range-input">
+                <option *ngFor="let opt of analyticsRangeOptions" [value]="opt">{{ opt }}</option>
+              </select>
+              <span class="dropdown-arrow">▾</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Analytics Grid Layout -->
+        <div class="analytics-body-grid">
+
+          <!-- TOP ROW: Volume (Stacked Bar) + Status Distribution (Donut) -->
+          <div class="analytics-row-dual">
+
+            <!-- Card 1: Document Processing Volume -->
+            <div class="analytics-sub-card card-volume-chart">
+              <div class="sub-card-header">
+                <div>
+                  <h3 class="sub-card-title">Document Processing Volume</h3>
+                  <span class="sub-card-subtitle">Daily document intake by category</span>
+                </div>
+                <div class="sub-card-control">
+                  <select [(ngModel)]="selectedVolumePeriod" class="sub-card-select">
+                    <option *ngFor="let opt of volumePeriodOptions" [value]="opt">{{ opt }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="bar-chart-container">
+                <div class="y-axis-labels">
+                  <span>100%</span>
+                  <span>75%</span>
+                  <span>50%</span>
+                  <span>25%</span>
+                  <span>0%</span>
+                </div>
+                <div class="chart-bars-viewport">
+                  @for (bar of volumeBars; track bar.label) {
+                    <div class="stacked-bar-col">
+                      <div class="bar-stack" [style.height.%]="bar.heightPct">
+                        <span class="seg-purple" [style.height.%]="bar.segPurple"></span>
+                        <span class="seg-cyan" [style.height.%]="bar.segCyan"></span>
+                        <span class="seg-sky" [style.height.%]="bar.segSky"></span>
+                        <span class="seg-blue" [style.height.%]="bar.segBlue"></span>
+                      </div>
+                      <span class="x-label">{{ bar.label }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Legend Row -->
+              <div class="volume-legend-row">
+                <span class="legend-item"><span class="dot dot-blue"></span> Supplier Contracts</span>
+                <span class="legend-item"><span class="dot dot-sky"></span> Purchase Invoices</span>
+                <span class="legend-item"><span class="dot dot-cyan"></span> Internal Policies</span>
+                <span class="legend-item"><span class="dot dot-purple"></span> Compliance Reports</span>
+              </div>
+            </div>
+
+            <!-- Card 2: Document Status Distribution -->
+            <div class="analytics-sub-card card-status-donut">
+              <div class="sub-card-header">
+                <div>
+                  <h3 class="sub-card-title">Document Status Distribution</h3>
+                  <span class="sub-card-subtitle">Current status of all documents in the system</span>
+                </div>
+              </div>
+
+              <div class="donut-chart-flex">
+                <div class="donut-svg-wrapper">
+                  <svg viewBox="0 0 160 160" class="donut-svg">
+                    <!-- Base ring -->
+                    <circle cx="80" cy="80" r="60" fill="none" stroke="#e2e8f0" stroke-width="22" />
+                    <!-- Approved -->
+                    <circle cx="80" cy="80" r="60" fill="none" stroke="#10b981" stroke-width="22" [attr.stroke-dasharray]="donutApprovedDasharray" stroke-dashoffset="0" transform="rotate(-90 80 80)" />
+                    <!-- In Review -->
+                    <circle cx="80" cy="80" r="60" fill="none" stroke="#3b82f6" stroke-width="22" [attr.stroke-dasharray]="donutInReviewDasharray" [attr.stroke-dashoffset]="donutInReviewOffset" transform="rotate(-90 80 80)" />
+                    <!-- Processing -->
+                    <circle cx="80" cy="80" r="60" fill="none" stroke="#8b5cf6" stroke-width="22" [attr.stroke-dasharray]="donutProcessingDasharray" [attr.stroke-dashoffset]="donutProcessingOffset" transform="rotate(-90 80 80)" />
+                    <!-- Exceptions -->
+                    <circle cx="80" cy="80" r="60" fill="none" stroke="#f97316" stroke-width="22" [attr.stroke-dasharray]="donutExceptionsDasharray" [attr.stroke-dashoffset]="donutExceptionsOffset" transform="rotate(-90 80 80)" />
+                    <!-- Archived -->
+                    <circle cx="80" cy="80" r="60" fill="none" stroke="#94a3b8" stroke-width="22" [attr.stroke-dasharray]="donutArchivedDasharray" [attr.stroke-dashoffset]="donutArchivedOffset" transform="rotate(-90 80 80)" />
+                  </svg>
+                  <div class="donut-center-badge">
+                    <span class="donut-total-val">{{ donutTotal | number }}</span>
+                    <span class="donut-total-lbl">Documents</span>
+                  </div>
+                </div>
+
+                <div class="donut-legend-table">
+                  <div class="legend-row">
+                    <span class="legend-dot-label"><span class="dot dot-green"></span> Approved</span>
+                    <span class="legend-num font-bold">{{ donutApprovedCount | number }}</span>
+                    <span class="legend-pct">{{ donutApprovedPct }}%</span>
+                  </div>
+                  <div class="legend-row">
+                    <span class="legend-dot-label"><span class="dot dot-blue"></span> In Review</span>
+                    <span class="legend-num font-bold">{{ donutInReviewCount | number }}</span>
+                    <span class="legend-pct">{{ donutInReviewPct }}%</span>
+                  </div>
+                  <div class="legend-row">
+                    <span class="legend-dot-label"><span class="dot dot-purple"></span> Processing</span>
+                    <span class="legend-num font-bold">{{ donutProcessingCount | number }}</span>
+                    <span class="legend-pct">{{ donutProcessingPct }}%</span>
+                  </div>
+                  <div class="legend-row">
+                    <span class="legend-dot-label"><span class="dot dot-orange"></span> Exceptions</span>
+                    <span class="legend-num font-bold">{{ donutExceptionsCount | number }}</span>
+                    <span class="legend-pct">{{ donutExceptionsPct }}%</span>
+                  </div>
+                  <div class="legend-row">
+                    <span class="legend-dot-label"><span class="dot dot-grey"></span> Archived</span>
+                    <span class="legend-num font-bold">{{ donutArchivedCount | number }}</span>
+                    <span class="legend-pct">{{ donutArchivedPct }}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- MIDDLE ROW: Confidence Brackets + SLA Line Chart -->
+          <div class="analytics-row-dual">
+
+            <!-- Card 3: AI Extraction Confidence -->
+            <div class="analytics-sub-card card-confidence">
+              <div class="sub-card-header">
+                <div>
+                  <h3 class="sub-card-title">AI Extraction Confidence</h3>
+                  <span class="sub-card-subtitle">Distribution of field extraction confidence scores</span>
+                </div>
+              </div>
+
+              <div class="confidence-bars-list">
+                @for (row of confidenceRows; track row.bracket) {
+                  <div class="confidence-row">
+                    <span class="conf-bracket-label">{{ row.bracket }}</span>
+                    <div class="conf-track-bg">
+                      <div class="conf-fill-bar" [ngClass]="row.barClass" [style.width.%]="row.widthPct"></div>
+                    </div>
+                    <span class="conf-count-val font-bold">{{ row.count | number }}</span>
+                    <span class="conf-pct-lbl">{{ row.pctStr }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Card 4: Review SLA Performance -->
+            <div class="analytics-sub-card card-sla-chart">
+              <div class="sub-card-header">
+                <div>
+                  <h3 class="sub-card-title">Review SLA Performance</h3>
+                  <span class="sub-card-subtitle">On-time vs overdue reviews trend</span>
+                </div>
+                <div class="sub-card-control">
+                  <select [(ngModel)]="selectedSlaPeriod" class="sub-card-select">
+                    <option *ngFor="let opt of slaPeriodOptions" [value]="opt">{{ opt }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="line-chart-container">
+                <div class="y-axis-labels">
+                  <span>100</span>
+                  <span>75</span>
+                  <span>50</span>
+                  <span>25</span>
+                  <span>0</span>
+                </div>
+                <div class="line-chart-viewport">
+                  <svg viewBox="0 0 400 130" preserveAspectRatio="none" class="sla-line-svg">
+                    <line x1="0" y1="10" x2="400" y2="10" stroke="#f1f5f9" stroke-width="1" />
+                    <line x1="0" y1="40" x2="400" y2="40" stroke="#f1f5f9" stroke-width="1" />
+                    <line x1="0" y1="70" x2="400" y2="70" stroke="#f1f5f9" stroke-width="1" />
+                    <line x1="0" y1="100" x2="400" y2="100" stroke="#f1f5f9" stroke-width="1" />
+                    <line x1="0" y1="125" x2="400" y2="125" stroke="#f1f5f9" stroke-width="1" />
+
+                    <!-- On-time Line (Green) -->
+                    <polyline points="25,48 75,32 125,22 175,18 225,38 275,26 325,28 375,24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="25" cy="48" r="4" fill="#10b981" />
+                    <circle cx="75" cy="32" r="4" fill="#10b981" />
+                    <circle cx="125" cy="22" r="4" fill="#10b981" />
+                    <circle cx="175" cy="18" r="4" fill="#10b981" />
+                    <circle cx="225" cy="38" r="4" fill="#10b981" />
+                    <circle cx="275" cy="26" r="4" fill="#10b981" />
+                    <circle cx="325" cy="28" r="4" fill="#10b981" />
+                    <circle cx="375" cy="24" r="4" fill="#10b981" />
+
+                    <!-- Overdue Line (Orange) -->
+                    <polyline points="25,110 75,102 125,92 175,100 225,94 275,106 325,100 375,100" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="25" cy="110" r="4" fill="#f97316" />
+                    <circle cx="75" cy="102" r="4" fill="#f97316" />
+                    <circle cx="125" cy="92" r="4" fill="#f97316" />
+                    <circle cx="175" cy="100" r="4" fill="#f97316" />
+                    <circle cx="225" cy="94" r="4" fill="#f97316" />
+                    <circle cx="275" cy="106" r="4" fill="#f97316" />
+                    <circle cx="325" cy="100" r="4" fill="#f97316" />
+                    <circle cx="375" cy="100" r="4" fill="#f97316" />
+                  </svg>
+                  <div class="x-axis-weeks">
+                    <span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>W5</span><span>W6</span><span>W7</span><span>W8</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Legend Row -->
+              <div class="sla-legend-row">
+                <span class="legend-item"><span class="dot dot-green"></span> On-time Reviews</span>
+                <span class="legend-item"><span class="dot dot-orange"></span> Overdue Reviews</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- BOTTOM ROW: Exception Breakdown (Full Width 100%) -->
+          <div class="analytics-row-full">
+            <div class="analytics-sub-card card-exceptions">
+              <div class="sub-card-header">
+                <div>
+                  <h3 class="sub-card-title">Exception Breakdown</h3>
+                  <span class="sub-card-subtitle">Key reasons for document processing exceptions</span>
+                </div>
+              </div>
+
+              <div class="exceptions-meter-list">
+                @for (row of exceptionRows; track row.label) {
+                  <div class="exception-row">
+                    <span class="ex-label">{{ row.label }}</span>
+                    <div class="ex-track-bg">
+                      <div class="ex-fill-bar" [ngClass]="row.barClass" [style.width.%]="row.barWidth"></div>
+                    </div>
+                    <span class="ex-count font-bold">{{ row.count }}</span>
+                    <span class="ex-pct">{{ row.pctStr }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION 4: PIPELINE FUNNEL STEPPER & LIVE TOOLS
+         ========================================================================= -->
+    <section class="pipeline-funnel-container">
+      <div class="enterprise-panel-card">
+        <div class="panel-card-header flex-wrap-header">
+          <div class="panel-header-titles">
+            <h3 class="panel-card-title">Document Processing Pipeline Funnel</h3>
+            <span class="panel-card-subtitle">Real-time throughput across all pipeline stages (Click any step to inspect)</span>
+          </div>
+
+          <div class="header-right-tools">
+            <div class="period-toggle-pills">
+              <button
+                *ngFor="let period of funnelPeriods"
+                type="button"
+                class="period-pill"
+                [class.active]="selectedFunnelPeriod === period"
+                (click)="setFunnelPeriod(period)"
+              >
+                {{ period }}
+              </button>
+            </div>
+
+            <!-- Date Range & Live Status -->
+            <div class="live-sync-indicator">
+              <span class="pulse-indicator-dot" [class.syncing]="isRefreshing()"></span>
+              <span class="sync-caption">Updated: {{ lastUpdatedTimestamp }}</span>
+              <button type="button" class="btn-sync-trigger" (click)="refreshNow()" title="Refresh metrics">🔄</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stepper-pipeline-grid">
+          <div *ngFor="let stage of pipelineStages; let i = index" class="stage-step-card clickable" (click)="drillDown('/documents', { stage: stage.name })">
+            <div class="stage-step-top">
+              <span class="step-badge-tag">Step {{ stage.id }}</span>
+              <span class="step-chevron" *ngIf="i < pipelineStages.length - 1">›</span>
+            </div>
+            <div class="step-count-stat">{{ stage.count }}</div>
+            <div class="step-label-name">{{ stage.name }}</div>
+            <span class="step-reconcile-hint">Reconciles with {{ stage.count }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION 5: STAGE CONVERSION RATIOS
+         ========================================================================= -->
+    <section class="conversion-ratios-panel">
+      <div class="ratios-quad-grid">
+        <div *ngFor="let ratio of conversionRatios" class="ratio-stat-card">
+          <div class="ratio-top-flex">
+            <span class="ratio-name">{{ ratio.title }}</span>
+            <span class="ratio-percent-bold">{{ ratio.percentage }}%</span>
+          </div>
+          <div class="ratio-track-bar">
+            <div class="ratio-fill-progress" [style.width.%]="ratio.percentage"></div>
+          </div>
+          <div class="ratio-footer-flex">
+            <span class="ratio-sub-text">{{ ratio.subtitle }}</span>
+            <span class="ratio-fraction">{{ ratio.ratioText }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECTION 6: RECENT LIVE INGESTION STREAM (REAL DOCUMENTS)
+         ========================================================================= -->
+    <section class="live-stream-panel">
+      <div class="enterprise-panel-card">
+        <div class="panel-card-header">
+          <div class="panel-header-titles">
+            <h3 class="panel-card-title">Recent Live Ingestion Stream</h3>
+            <span class="panel-card-subtitle">Active documents currently progressing through OCR and extraction</span>
+          </div>
+          <a routerLink="/documents" class="panel-header-action-link">View All Documents ›</a>
+        </div>
+
+        <div class="stream-entries-list">
+          @if (recentLiveDocuments.length === 0) {
+            <div class="p-8 text-center text-muted">
+              No recent documents found in the current workspace. Click <strong>Process New Document</strong> to upload.
+            </div>
+          } @else {
+            @for (doc of recentLiveDocuments; track doc.id) {
+              <div class="stream-entry-row clickable" (click)="drillDown('/documents', { id: doc.id })">
+                <div class="file-icon-badge" [ngClass]="getFileIconClass(doc.name)">
+                  {{ (doc.name.split('.').pop() || 'DOC').toUpperCase() }}
+                </div>
+                <div class="entry-meta-info">
+                  <strong class="entry-filename">{{ doc.name }}</strong>
+                  <span class="entry-description">{{ doc.type }} · {{ doc.size || '2.4 MB' }} · Uploaded by {{ doc.owner }}</span>
+                </div>
+                <span [ngClass]="getStatusBadgeClass(doc.status)">{{ doc.status }}</span>
+                <span class="entry-timestamp-tag">{{ formatTimeAgo(doc.updatedAt) }}</span>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </section>
+  }
+</div>

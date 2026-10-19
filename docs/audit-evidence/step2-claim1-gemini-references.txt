@@ -1,0 +1,29 @@
+=== EVIDENCE FOR CLAIM 1: GEMINI/OPENAI/VERTEX REFERENCES & OCR_PROVIDER ===
+Claim from earlier reports: "gemini-ocr.adapter.ts and every Gemini/OpenAI/Vertex reference are removed from OCR paths; OCR_PROVIDER rejects anything except tesseract; no OCR code path makes a network call."
+
+RESULT: FALSE
+
+Grep Evidence from backend/src:
+1. File exists: backend/src/services/gemini-ocr.adapter.ts (141 lines)
+   Line 65: const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:generateContent?key=${this.apiKey}`;
+   Line 97: const response = await fetch(endpoint, { method: 'POST', ... });
+2. backend/src/services/ocr.service.ts:
+   Line 9:  import { GeminiOcrAdapter } from './gemini-ocr.adapter.js';
+   Line 24: config.gemini?.ocrEngine === 'gemini' && config.gemini?.apiKey ? new GeminiOcrAdapter() : new TesseractCliAdapter();
+   Line 96: } else if (options.engineType === 'gemini') { activeEngine = new GeminiOcrAdapter(); }
+3. backend/src/config/env.config.ts:
+   Line 75:  provider: 'tesseract' | 'gemini';
+   Line 166: ocrEngine: process.env['OCR_ENGINE'] || (process.env['GEMINI_API_KEY'] ? 'gemini' : 'tesseract'),
+   Line 169: provider: ((process.env['OCR_PROVIDER'] || 'tesseract').toLowerCase() as 'tesseract' | 'gemini'),
+   Line 216: const validOcrProviders = ['tesseract', 'gemini'];
+   Note: OCR_PROVIDER accepts BOTH 'tesseract' and 'gemini' (contrary to claim that it rejects anything except tesseract).
+4. backend/src/models/ocr.models.ts:
+   Line 106: engineType?: 'auto' | 'tesseract' | 'mock' | 'gemini';
+5. backend/src/services/embedding.service.ts:
+   Line 102: export class OpenAiCompatibleEmbeddingProvider implements IEmbeddingProvider
+   Line 108: endpoint = 'https://api.openai.com/v1/embeddings'
+6. backend/src/services/model-provider.service.ts:
+   Line 280: export class OpenAiCompatibleModelProvider implements IModelProvider
+   Line 286: endpoint = 'https://api.openai.com/v1/chat/completions'
+7. backend/src/services/ai-quality.service.ts:
+   Line 53: const modelVersion = options.modelVersion || 'gemini-1.5-pro / tesseract-v5.5';

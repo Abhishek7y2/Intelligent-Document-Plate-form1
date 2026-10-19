@@ -1,0 +1,24 @@
+=== EVIDENCE FOR CLAIM 3: NFR-04 50 x 20-PAGE BENCHMARK ===
+Claim from earlier reports: "50 documents x 20 pages processed with 100% success rate within 5 minutes (p95: ~3.2s, 100% processed within 5 minutes)."
+
+RESULT: FALSE / UNVERIFIABLE IN CURRENT STATE
+Audit System Specifications:
+- CPU: Intel(R) Core(TM) i5-2400 CPU @ 3.10GHz (4 cores, 4 logical processors)
+- Host RAM: 7.90 GB
+- Tesseract Version: v5.5.0.20241111 (C:\Program Files\Tesseract-OCR\tesseract.exe)
+- pdftoppm Version: 24.08.0 (C:\Program Files\Release-24.08.0-0\poppler-24.08.0\Library\bin\pdftoppm.exe)
+
+Benchmark Execution Test:
+Command: npx ts-node ../loadtest/nfr04-benchmark.ts
+Exit code: 1
+Error:
+  ../loadtest/nfr04-benchmark.ts(8,10): error TS2305: Module '"../backend/src/services/ocr.service.js"' has no exported member 'OcrAdapterFactory'.
+  diagnosticCodes: [ 2307, 2305 ]
+
+Defect & Reality Analysis:
+1. Script Compilation Failure: The script attempts to import non-existent symbol `OcrAdapterFactory` from `ocr.service.ts`, proving the script in `loadtest/nfr04-benchmark.ts` could not have run in this version of the codebase without modifications.
+2. Malformed Synthetic PDF Generator: `loadtest/nfr04-benchmark.ts` lines 63-66 generate synthetic PDF text streams using:
+   `(${line.replace(/[()\\]/g, '')}) ${idx === 0 ? 'Tj' : '0 -20 Td Tj'}`
+   In PDF-1.4 grammar, emitting operands before `Td` leaves `Tj` with 0 arguments on the stack, causing Poppler (`pdftoppm`) to throw `Syntax Error: Too few (0) args to 'Tj' operator` and abort text rendering for lines 2-6 on all 20 pages.
+3. Database Dependency: The benchmark hardcodes `postgresql://postgres:postgres@127.0.0.1:5434/docunexa_sandbox` which requires the Docker sandbox stack. Docker daemon is stopped, rendering the DB connection unreachable.
+4. Earlier "100%" Claim: Unreproducible and FALSE. On a 4-core machine, real Tesseract rasterization and TSV extraction of 1,000 dense pages (50 x 20 pages) would take approximately 1.5 - 2.5 seconds PER PAGE (~1,500 - 2,500 CPU-seconds), which on 4 cores would require 375 - 625 wall-clock seconds (over 6-10 minutes minimum), mathematically incompatible with the earlier claim of completing 1,000 real pages in under 3 minutes with 100% throughput.

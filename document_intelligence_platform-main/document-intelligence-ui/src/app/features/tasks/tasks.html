@@ -1,0 +1,712 @@
+<div class="tasks-page">
+
+  <header class="page-header">
+
+    <div>
+      <div class="eyebrow">
+        WORKFLOW
+      </div>
+
+      <h1>Tasks & Workflow</h1>
+
+      <p>
+        Manage assigned reviews, approvals, document validation activities and task threads.
+      </p>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="task-summary">
+        <span class="summary-dot"></span>
+        {{ pendingCount }} tasks require your attention
+      </div>
+
+      <button
+        type="button"
+        class="primary-button"
+        (click)="openCreateTaskModal()"
+        aria-label="Create a new task"
+      >
+        + Create Task
+      </button>
+    </div>
+
+  </header>
+
+
+  <!-- Stats -->
+
+  <section class="stats-grid">
+
+    <div class="stat-card">
+      <div class="stat-icon pending">!</div>
+
+      <div>
+        <span>Pending</span>
+        <strong>{{ pendingCount }}</strong>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon progress">↻</div>
+
+      <div>
+        <span>In Progress</span>
+        <strong>{{ inProgressCount }}</strong>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon overdue">!</div>
+
+      <div>
+        <span>Overdue</span>
+        <strong>{{ overdueCount }}</strong>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon completed">✓</div>
+
+      <div>
+        <span>Completed</span>
+        <strong>{{ completedCount }}</strong>
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- Filters -->
+
+  <section class="filter-card">
+
+    <div style="display: flex; gap: 8px; margin-right: 12px;">
+      <button
+        type="button"
+        class="tab-btn"
+        [style.background]="filterScope === 'all' ? 'var(--primary-color, #2563eb)' : 'transparent'"
+        [style.color]="filterScope === 'all' ? '#ffffff' : 'inherit'"
+        [style.padding]="'6px 14px'"
+        [style.border-radius]="'6px'"
+        [style.border]="'1px solid var(--border-color, #cbd5e1)'"
+        (click)="setFilterScope('all')"
+      >
+        All Tasks
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [style.background]="filterScope === 'mine' ? 'var(--primary-color, #2563eb)' : 'transparent'"
+        [style.color]="filterScope === 'mine' ? '#ffffff' : 'inherit'"
+        [style.padding]="'6px 14px'"
+        [style.border-radius]="'6px'"
+        [style.border]="'1px solid var(--border-color, #cbd5e1)'"
+        (click)="setFilterScope('mine')"
+      >
+        Mine Only
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [style.background]="filterScope === 'overdue' ? '#dc2626' : 'transparent'"
+        [style.color]="filterScope === 'overdue' ? '#ffffff' : 'inherit'"
+        [style.padding]="'6px 14px'"
+        [style.border-radius]="'6px'"
+        [style.border]="'1px solid var(--border-color, #cbd5e1)'"
+        (click)="setFilterScope('overdue')"
+      >
+        Overdue Only
+      </button>
+    </div>
+
+    <div class="search-box">
+
+      <span class="search-icon">⌕</span>
+
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        placeholder="Search tasks or documents..."
+      />
+
+    </div>
+
+    <select [(ngModel)]="selectedStatus">
+      <option>All Status</option>
+      <option>Pending</option>
+      <option>In Progress</option>
+      <option>Completed</option>
+      <option>Overdue</option>
+    </select>
+
+    <select [(ngModel)]="selectedPriority">
+      <option>All Priority</option>
+      <option>High</option>
+      <option>Medium</option>
+      <option>Low</option>
+    </select>
+
+    <button
+      type="button"
+      class="clear-button"
+      (click)="clearFilters()"
+    >
+      Clear
+    </button>
+
+  </section>
+
+
+  <!-- Task List -->
+  @if (isLoading()) {
+    <app-loading-state layout="table" message="Loading assigned workflow tasks..."></app-loading-state>
+  } @else if (hasError()) {
+    <app-error-state
+      title="Unable to load tasks"
+      message="We encountered an issue fetching assigned workflow tasks."
+      (retry)="retryLoad()"
+    ></app-error-state>
+  } @else {
+    <section class="tasks-card">
+
+    <div class="card-header">
+
+      <div>
+        <strong>Assigned Tasks</strong>
+        <span>
+          {{ filteredTasks.length }} tasks
+        </span>
+      </div>
+
+      <span class="updated-label">
+        Updated just now
+      </span>
+
+    </div>
+
+
+    @if (filteredTasks.length > 0) {
+
+      <div class="task-list">
+
+        @for (task of filteredTasks; track task.id) {
+
+          <article
+            class="task-row"
+            [class.overdue-row]="task.status === 'Overdue'"
+          >
+
+            <div class="task-check">
+              @if (task.status === 'Completed') {
+                ✓
+              } @else {
+                {{ task.type === 'Approval' ? 'A' : 'R' }}
+              }
+            </div>
+
+
+            <div class="task-main">
+
+              <div class="task-title-row">
+
+                <button
+                  type="button"
+                  class="task-title"
+                  (click)="openTask(task)"
+                >
+                  {{ task.title }}
+                </button>
+
+                <span
+                  class="priority-badge"
+                  [class.high]="task.priority === 'High'"
+                  [class.medium]="task.priority === 'Medium'"
+                  [class.low]="task.priority === 'Low'"
+                >
+                  {{ task.priority }}
+                </span>
+
+              </div>
+
+
+              <p>
+                {{ task.description }}
+              </p>
+
+
+              <div class="task-meta">
+
+                <a
+                  [routerLink]="[
+                    '/documents',
+                    task.documentId
+                  ]"
+                >
+                  {{ task.documentName }}
+                </a>
+
+                <span>•</span>
+
+                <span>
+                  {{ task.id }}
+                </span>
+
+                <span>•</span>
+
+                <span>
+                  Assigned by {{ task.assignedBy }}
+                </span>
+
+              </div>
+
+            </div>
+
+
+            <div class="task-due">
+
+              <span>Due</span>
+
+              <strong
+                [class.overdue]="
+                  task.status === 'Overdue'
+                "
+              >
+                {{ task.dueDate }}
+              </strong>
+
+            </div>
+
+
+            <div class="task-status">
+
+              <span
+                class="status-badge"
+                [class.pending]="task.status === 'Pending'"
+                [class.progress]="task.status === 'In Progress'"
+                [class.completed]="task.status === 'Completed'"
+                [class.overdue]="task.status === 'Overdue'"
+              >
+                {{ task.status }}
+              </span>
+
+            </div>
+
+
+            <button
+              type="button"
+              class="open-button"
+              (click)="openTask(task)"
+            >
+              View
+            </button>
+
+          </article>
+
+        }
+
+      </div>
+
+    } @else {
+
+      <app-empty-state
+        variant="tasks"
+        title="No tasks assigned"
+        message="You have no open tasks requiring action at this time."
+        actionLabel="Clear Filters"
+        (action)="clearFilters()"
+      ></app-empty-state>
+
+    }
+
+  </section>
+  }
+
+
+  <!-- Task Detail Panel -->
+
+  @if (showTaskPanel && selectedTask) {
+
+    <div
+      class="modal-backdrop"
+      (click)="closeTask()"
+    >
+
+      <aside
+        class="task-panel"
+        (click)="$event.stopPropagation()"
+      >
+
+        <div class="panel-header">
+
+          <div>
+            <span class="panel-label">
+              TASK {{ selectedTask.id }}
+            </span>
+
+            <h2>
+              {{ selectedTask.title }}
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            class="close-button"
+            (click)="closeTask()"
+          >
+            ×
+          </button>
+
+        </div>
+
+
+        <div class="panel-body">
+
+          <div class="detail-status-row">
+
+            <span
+              class="status-badge"
+              [class.pending]="selectedTask.status === 'Pending'"
+              [class.progress]="selectedTask.status === 'In Progress'"
+              [class.completed]="selectedTask.status === 'Completed'"
+              [class.overdue]="selectedTask.status === 'Overdue'"
+            >
+              {{ selectedTask.status }}
+            </span>
+
+            <span
+              class="priority-badge"
+              [class.high]="selectedTask.priority === 'High'"
+              [class.medium]="selectedTask.priority === 'Medium'"
+              [class.low]="selectedTask.priority === 'Low'"
+            >
+              {{ selectedTask.priority }} Priority
+            </span>
+
+          </div>
+
+
+          <div class="detail-section">
+
+            <span class="detail-label">
+              DESCRIPTION
+            </span>
+
+            <p>
+              {{ selectedTask.description }}
+            </p>
+
+          </div>
+
+
+          <div class="detail-section">
+
+            <span class="detail-label">
+              DOCUMENT
+            </span>
+
+            <a
+              class="document-link"
+              [routerLink]="[
+                '/documents',
+                selectedTask.documentId
+              ]"
+              (click)="closeTask()"
+            >
+              <span class="document-icon">
+                PDF
+              </span>
+
+              <span>
+                {{ selectedTask.documentName }}
+                <small>
+                  {{ selectedTask.documentId }}
+                </small>
+              </span>
+            </a>
+
+          </div>
+
+
+          <div class="detail-grid">
+
+            <div>
+              <span>Assigned By</span>
+              <strong>
+                {{ selectedTask.assignedBy }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Due Date</span>
+              <strong
+                [class.overdue-text]="
+                  selectedTask.status === 'Overdue'
+                "
+              >
+                {{ selectedTask.dueDate }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Task Type</span>
+              <strong>
+                {{ selectedTask.type }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Created</span>
+              <strong>
+                {{ selectedTask.createdAt }}
+              </strong>
+            </div>
+
+          </div>
+
+          <!-- Comments Thread (FR-011) -->
+          <div class="detail-section" style="margin-top: 20px; border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span class="detail-label" style="font-weight: 600; font-size: 13px;">COMMENTS & ACTIVITY THREAD (FR-011)</span>
+              <span style="font-size: 12px; color: var(--text-muted, #64748b);">{{ taskComments().length }} comments</span>
+            </div>
+
+            <div class="comments-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 240px; overflow-y: auto; margin-bottom: 12px;">
+              @if (taskComments().length === 0) {
+                <div style="font-size: 13px; color: var(--text-muted, #94a3b8); font-style: italic; padding: 8px 0;">
+                  No comments yet. Start the thread below.
+                </div>
+              } @else {
+                @for (c of taskComments(); track c.id) {
+                  <div style="background: var(--bg-hover, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; padding: 8px 12px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted, #64748b); margin-bottom: 4px;">
+                      <strong style="color: var(--text-primary, #0f172a);">{{ c.authorName }}</strong>
+                      <span>{{ c.createdAt | date:'short' }}</span>
+                    </div>
+                    <p style="margin: 0; font-size: 13px; line-height: 1.4; color: var(--text-primary, #334155);">{{ c.comment }}</p>
+                  </div>
+                }
+              }
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <input
+                type="text"
+                [(ngModel)]="newCommentText"
+                placeholder="Add a comment to this task..."
+                (keydown.enter)="addComment()"
+                style="flex: 1; padding: 8px 12px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; font-size: 13px;"
+                aria-label="Add a task comment"
+              />
+              <button
+                type="button"
+                class="primary-button"
+                [disabled]="!newCommentText.trim() || isAddingComment()"
+                (click)="addComment()"
+                style="white-space: nowrap; padding: 8px 14px; font-size: 13px;"
+              >
+                {{ isAddingComment() ? 'Posting...' : 'Post' }}
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="panel-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-top: 1px solid var(--border-color, #e2e8f0);">
+          <div style="display: flex; gap: 8px;">
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="openEditTaskModal(selectedTask)"
+            >
+              ✎ Edit Task
+            </button>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center;">
+            @if (selectedTask.status === 'Pending' || selectedTask.status === 'Overdue') {
+              <button
+                type="button"
+                class="secondary-button"
+                (click)="startTask()"
+              >
+                Start Task
+              </button>
+            }
+
+            @if (selectedTask.status === 'In Progress') {
+              <button
+                type="button"
+                class="primary-button"
+                (click)="completeTask()"
+              >
+                ✓ Mark Complete
+              </button>
+            }
+
+            @if (selectedTask.status === 'Completed') {
+              <span class="completed-message" style="color: #16a34a; font-weight: 500; font-size: 13px;">
+                ✓ Task completed
+              </span>
+            }
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+
+  }
+
+  <!-- Create / Edit Task Modal Dialog (Part F.1) -->
+  @if (showCreateModal) {
+    <div
+      class="modal-backdrop"
+      (click)="closeCreateModal()"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-labelledby]="isEditing ? 'modal-edit-task-title' : 'modal-create-task-title'"
+    >
+      <div
+        class="modal-card"
+        (click)="$event.stopPropagation()"
+        style="max-width: 500px; width: 100%; background: var(--bg-surface, #ffffff); border-radius: 12px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); border: 1px solid var(--border-color, #e2e8f0);"
+      >
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 id="modal-create-task-title" style="margin: 0; font-size: 18px; font-weight: 600;">
+            {{ isEditing ? 'Edit Task' : 'Create New Task' }}
+          </h2>
+          <button
+            type="button"
+            class="close-button"
+            (click)="closeCreateModal()"
+            aria-label="Close dialog"
+            style="background: transparent; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted, #64748b);"
+          >
+            ×
+          </button>
+        </div>
+
+        @if (formError) {
+          <div style="padding: 10px 14px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; color: #dc2626; font-size: 13px; margin-bottom: 16px;" role="alert">
+            {{ formError }}
+          </div>
+        }
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary, #475569); margin-bottom: 4px;">
+              Title *
+            </label>
+            <input
+              type="text"
+              [(ngModel)]="taskForm.title"
+              placeholder="e.g. Verify VAT calculation on invoice"
+              style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; font-size: 14px; box-sizing: border-box;"
+              required
+            />
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary, #475569); margin-bottom: 4px;">
+              Description
+            </label>
+            <textarea
+              [(ngModel)]="taskForm.description"
+              rows="3"
+              placeholder="Provide specific validation steps or instructions..."
+              style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; font-size: 14px; resize: vertical; box-sizing: border-box;"
+            ></textarea>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary, #475569); margin-bottom: 4px;">
+                Priority
+              </label>
+              <select
+                [(ngModel)]="taskForm.priority"
+                style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; font-size: 14px;"
+              >
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary, #475569); margin-bottom: 4px;">
+                Due Date
+              </label>
+              <input
+                type="date"
+                [(ngModel)]="taskForm.dueDate"
+                style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; font-size: 14px; box-sizing: border-box;"
+              />
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary, #475569); margin-bottom: 4px;">
+                Assignee
+              </label>
+              <input
+                type="text"
+                [(ngModel)]="taskForm.assignedTo"
+                placeholder="User ID or Email"
+                style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; font-size: 14px; box-sizing: border-box;"
+              />
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary, #475569); margin-bottom: 4px;">
+                Linked Document ID
+              </label>
+              <input
+                type="text"
+                [(ngModel)]="taskForm.linkedDocumentId"
+                placeholder="e.g. DOC-10247"
+                style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; font-size: 14px; box-sizing: border-box;"
+              />
+            </div>
+          </div>
+
+          @if (isEditing) {
+            <div>
+              <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary, #475569); margin-bottom: 4px;">
+                Status
+              </label>
+              <select
+                [(ngModel)]="taskForm.status"
+                style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 6px; font-size: 14px;"
+              >
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+          }
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color, #e2e8f0);">
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="closeCreateModal()"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="primary-button"
+            [disabled]="isSavingTask() || !taskForm.title.trim()"
+            (click)="saveTask()"
+          >
+            {{ isSavingTask() ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create Task') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

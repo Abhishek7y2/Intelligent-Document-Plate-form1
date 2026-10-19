@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.log
+coverage/
+.DS_Store
+.env.sandbox
+*.sandbox
+*.env
+data/
+uploads/
+

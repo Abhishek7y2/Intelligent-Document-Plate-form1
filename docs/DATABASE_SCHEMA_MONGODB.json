@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DocuNexa MongoDB Document Layout & Unstructured Artifact Schemas",
+  "description": "JSON Schemas for MongoDB collections: OCR_Page_Layouts, Unstructured_PayLoads, and Clause_Diff_Vectors",
+  "collections": {
+    "ocr_page_layouts": {
+      "bsonType": "object",
+      "required": ["documentId", "pageNumber", "width", "height", "boundingPolygonTokens"],
+      "properties": {
+        "_id": { "bsonType": "objectId" },
+        "documentId": { "bsonType": "string", "description": "Foreign key matching PostgreSQL documents.document_id" },
+        "pageNumber": { "bsonType": "int", "minimum": 1 },
+        "width": { "bsonType": "double" },
+        "height": { "bsonType": "double" },
+        "rotationDegrees": { "bsonType": "int" },
+        "boundingPolygonTokens": {
+          "bsonType": "array",
+          "items": {
+            "bsonType": "object",
+            "required": ["id", "bbox", "text", "confidence"],
+            "properties": {
+              "id": { "bsonType": "string" },
+              "bbox": {
+                "bsonType": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": { "bsonType": "double" },
+                "description": "[x, y, width, height] relative coordinates"
+              },
+              "text": { "bsonType": "string" },
+              "confidence": { "bsonType": "double", "minimum": 0, "maximum": 1 },
+              "fontStyle": { "bsonType": "string" },
+              "readingOrder": { "bsonType": "int" }
+            }
+          }
+        },
+        "extractedTableGrid": {
+          "bsonType": "array",
+          "items": {
+            "bsonType": "object",
+            "properties": {
+              "tableId": { "bsonType": "string" },
+              "rowCount": { "bsonType": "int" },
+              "colCount": { "bsonType": "int" },
+              "cells": {
+                "bsonType": "array",
+                "items": {
+                  "bsonType": "object",
+                  "properties": {
+                    "rowIndex": { "bsonType": "int" },
+                    "colIndex": { "bsonType": "int" },
+                    "text": { "bsonType": "string" },
+                    "confidence": { "bsonType": "double" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "unstructured_payloads": {
+      "bsonType": "object",
+      "required": ["documentId", "version", "rawJson"],
+      "properties": {
+        "_id": { "bsonType": "objectId" },
+        "documentId": { "bsonType": "string" },
+        "version": { "bsonType": "int" },
+        "rawJson": { "bsonType": "object" },
+        "extractedEntities": { "bsonType": "object" },
+        "clauseVectors": {
+          "bsonType": "array",
+          "items": {
+            "bsonType": "object",
+            "properties": {
+              "clauseId": { "bsonType": "string" },
+              "sectionTitle": { "bsonType": "string" },
+              "clauseText": { "bsonType": "string" },
+              "riskLevel": { "bsonType": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+              "embeddingVector": {
+                "bsonType": "array",
+                "items": { "bsonType": "double" },
+                "description": "1536-dimensional vector for AI semantic similarity match"
+              }
+            }
+          }
+        },
+        "createdAt": { "bsonType": "date" }
+      }
+    }
+  }
+}

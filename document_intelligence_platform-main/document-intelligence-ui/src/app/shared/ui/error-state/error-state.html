@@ -1,0 +1,20 @@
+<div class="error-state" [ngClass]="'variant-' + variant" role="alert">
+  <div class="error-icon">
+    <span>{{ resolvedIcon }}</span>
+  </div>
+
+  <div class="error-content">
+    <h3>{{ resolvedTitle }}</h3>
+    <p>{{ resolvedMessage }}</p>
+  </div>
+
+  @if (showRetry) {
+    <button
+      type="button"
+      class="retry-button"
+      (click)="onRetry()"
+    >
+      <span>↻</span> {{ retryLabel }}
+    </button>
+  }
+</div>

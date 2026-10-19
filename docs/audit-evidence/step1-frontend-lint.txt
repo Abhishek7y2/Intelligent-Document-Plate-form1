@@ -1,0 +1,11 @@
+$ npm run lint
+npm error Missing script: "lint"
+
+$ npx ng lint
+Cannot find "lint" target for the specified project.
+You can add a package that implements these capabilities.
+For example:
+  ESLint: ng add angular-eslint
+
+$ npx tsc --noEmit
+Exit code: 0 (No type errors)

@@ -1,0 +1,50 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 767 >>
+stream
+BT
+/F1 12 Tf
+50 720 Td
+(============================================================) Tj
+(DOCUNEXA ENTERPRISE GOLDEN DATASET: INVOICE) 0 -20 Td Tj
+(DOCUMENT TITLE: Cloud Infrastructure Invoice #102) 0 -20 Td Tj
+(============================================================) 0 -20 Td Tj
+() 0 -20 Td Tj
+(INVOICE NUMBER: INV-2026-102) 0 -20 Td Tj
+(INVOICE DATE: 2026-01-15) 0 -20 Td Tj
+(VENDOR NAME: Apex Cloud Solutions Inc) 0 -20 Td Tj
+(TOTAL AMOUNT: 3890.50) 0 -20 Td Tj
+(CURRENCY: USD) 0 -20 Td Tj
+(TAX AMOUNT: 389.05) 0 -20 Td Tj
+() 0 -20 Td Tj
+(------------------------------------------------------------) 0 -20 Td Tj
+(Standard Legal and Commercial Terms Apply.) 0 -20 Td Tj
+(Verified synthetic benchmark fixture for AI Quality Evaluation AI-008.) 0 -20 Td Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001058 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1155
+%%EOF

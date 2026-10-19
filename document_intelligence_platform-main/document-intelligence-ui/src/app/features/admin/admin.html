@@ -1,0 +1,49 @@
+<div class="admin-shell-layout">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-header">
+      <span class="logo-icon">🛡️</span>
+      <div>
+        <h3>Admin & Governance</h3>
+        <span class="role-badge">{{ currentRole | uppercase }}</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      @for (nav of visibleNavItems; track nav.route) {
+        <a
+          [routerLink]="nav.route"
+          routerLinkActive="active"
+          class="nav-link"
+        >
+          <span class="icon">{{ nav.icon }}</span>
+          <span class="label">{{ nav.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="tenant-info">
+        <span class="lbl">Active Tenant:</span>
+        <strong class="val">Acme Corp Global</strong>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN ADMIN CONTENT AREA -->
+  <main class="admin-main">
+    <!-- BREADCRUMB HEADER -->
+    <header class="admin-topbar">
+      <div class="breadcrumbs">
+        <span class="root">Administration</span>
+        <span class="sep">/</span>
+        <span class="active-crumb">{{ currentBreadcrumb }}</span>
+      </div>
+    </header>
+
+    <!-- ROUTER OUTLET FOR CHILD SUB-PAGES -->
+    <div class="admin-content-container">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

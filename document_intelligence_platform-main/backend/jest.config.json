@@ -1,0 +1,16 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/src"],
+  "testMatch": ["**/*.spec.ts"],
+  "transform": {
+    "^.+\\.(ts|tsx|js|mjs)$": ["ts-jest", { "useESM": true }]
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(@scure|@noble|@otplib|otplib)/)"
+  ],
+  "moduleNameMapper": {
+    "^(\\.\\.?/.*)\\.js$": "$1"
+  },
+  "testTimeout": 30000
+}

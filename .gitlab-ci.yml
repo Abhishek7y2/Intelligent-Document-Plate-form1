@@ -1,0 +1,129 @@
+stages:
+  - validate
+  - test
+  - build
+  - deploy-staging
+  - rollback-staging
+
+variables:
+  NODE_VERSION: "22"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+
+default:
+  image: node:22-alpine
+
+# =============================================================================
+# STAGE: VALIDATE (Lint & Typecheck)
+# =============================================================================
+backend-validate:
+  stage: validate
+  before_script:
+    - cd document_intelligence_platform-main/backend
+    - npm ci
+  script:
+    - npm run lint
+    - npm run build
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+frontend-validate:
+  stage: validate
+  before_script:
+    - cd document_intelligence_platform-main/document-intelligence-ui
+    - npm ci
+  script:
+    - npm run build -- --configuration production
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# =============================================================================
+# STAGE: TEST
+# =============================================================================
+backend-tests:
+  stage: test
+  before_script:
+    - cd document_intelligence_platform-main/backend
+    - npm ci
+  script:
+    - npm test -- --runInBand
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+frontend-tests:
+  stage: test
+  before_script:
+    - cd document_intelligence_platform-main/document-intelligence-ui
+    - npm ci
+  script:
+    - npx vitest run
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# =============================================================================
+# STAGE: BUILD CONTAINERS
+# =============================================================================
+docker-build-backend:
+  stage: build
+  image: docker:27-cli
+  services:
+    - docker:27-dind
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA -t $CI_REGISTRY_IMAGE/backend:latest ./document_intelligence_platform-main/backend
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+docker-build-frontend:
+  stage: build
+  image: docker:27-cli
+  services:
+    - docker:27-dind
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA -t $CI_REGISTRY_IMAGE/frontend:latest ./document_intelligence_platform-main/document-intelligence-ui
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# =============================================================================
+# STAGE: DEPLOY STAGING
+# =============================================================================
+deploy-to-staging:
+  stage: deploy-staging
+  environment:
+    name: staging
+    url: https://staging.docunexa.enterprise
+  script:
+    - echo "[DEPLOY] Deploying commit $CI_COMMIT_SHA to DocuNexa Cloud Staging Cluster"
+    - |
+      if [ -z "$KUBECONFIG" ] && [ -z "$STAGING_SSH_HOST" ]; then
+        echo "[ERROR] Staging infrastructure credentials not configured in GitLab CI/CD Variables."
+        echo "Please set KUBECONFIG or STAGING_SSH_HOST in Project Settings > CI/CD > Variables."
+        exit 1
+      fi
+    - echo "[DEPLOY] Executing rolling update on namespace 'staging'..."
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+      when: manual
+
+# =============================================================================
+# STAGE: ROLLBACK STAGING
+# =============================================================================
+rollback-staging:
+  stage: rollback-staging
+  environment:
+    name: staging
+    url: https://staging.docunexa.enterprise
+  script:
+    - echo "[ROLLBACK] Rolling back Staging deployment to previous release..."
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+      when: manual

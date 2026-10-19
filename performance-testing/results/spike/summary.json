@@ -1,0 +1,64 @@
+{
+  "profile": "spike",
+  "description": "Sudden spike of 60 VUs with rapid 1s ramp-up to evaluate surge handling and queue draining",
+  "concurrency": 60,
+  "durationSeconds": 15.1,
+  "totalRequests": 4429,
+  "successfulRequests": 4429,
+  "expectedDenials": 0,
+  "unexpectedFailures": 0,
+  "genuineErrorRate": 0,
+  "rawFailureRate": 0,
+  "throughputRps": 293.1,
+  "statusCodes": {
+    "200": 4429
+  },
+  "overallLatencies": {
+    "count": 4429,
+    "min": 2.41,
+    "max": 442.49,
+    "mean": 145.26,
+    "p50": 113.21,
+    "p90": 273.45,
+    "p95": 305.64,
+    "p99": 363.78
+  },
+  "transactionBreakdown": {
+    "GET /search (Metadata & Text)": {
+      "count": 1498,
+      "min": 3.33,
+      "max": 205.74,
+      "mean": 95.93,
+      "p50": 94.08,
+      "p90": 141.95,
+      "p95": 158.6,
+      "p99": 191.67
+    },
+    "GET /documents/:id": {
+      "count": 1466,
+      "min": 2.41,
+      "max": 207.18,
+      "mean": 95.55,
+      "p50": 93.63,
+      "p90": 139.32,
+      "p95": 150.27,
+      "p99": 179.53
+    },
+    "GET /compare?doc1=DOC-10245&doc2=v2": {
+      "count": 1465,
+      "min": 4.53,
+      "max": 442.49,
+      "mean": 245.46,
+      "p50": 241.58,
+      "p90": 321.89,
+      "p95": 352.63,
+      "p99": 387.65
+    }
+  },
+  "memoryTelemetry": {
+    "initialHeapUsedMb": 28.1,
+    "finalHeapUsedMb": 17.8,
+    "finalRssMb": 117.7
+  },
+  "timestamp": "2026-10-14T05:56:02.914Z"
+}

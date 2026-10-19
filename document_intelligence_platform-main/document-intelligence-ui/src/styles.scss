@@ -1,0 +1,209 @@
+:root {
+  /* ==========================================================================
+     DOCNEXA THEME COLOUR PALETTE (EXACT SPECIFICATION)
+     ========================================================================== */
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --ai-accent: #7c3aed;
+  --secondary: #0891b2;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #0891b2;
+
+  /* Backward-compatible brand alias */
+  --brand: #4f46e5;
+  --brand-dark: #4338ca;
+  --brand-soft: #eef2ff;
+  --brand-hover: #4338ca;
+  --tealAccent: #0891b2;
+  --ink: #0f172a;
+  --ink-muted: #475569;
+  --line: #e2e8f0;
+  --panel: #ffffff;
+  --sidebar-bg: #ffffff;
+
+  /* Status Badges */
+  --badge-pending-bg: #fef3c7;
+  --badge-pending-text: #d97706;
+  --badge-review-bg: #ede9fe;
+  --badge-review-text: #7c3aed;
+  --badge-approved-bg: #dcfce7;
+  --badge-approved-text: #16a34a;
+  --badge-rejected-bg: #fee2e2;
+  --badge-rejected-text: #dc2626;
+
+  --success-bg: #dcfce7;
+  --warning-bg: #fef3c7;
+  --info-bg: #e0f2fe;
+  --danger-bg: #fee2e2;
+
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 20px -4px rgba(15, 23, 42, 0.04);
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.04), 0 10px 24px -4px rgba(15, 23, 42, 0.05);
+  --shadow-btn: 0 4px 14px rgba(79, 70, 229, 0.28);
+  --shadow-dropdown: 0 10px 30px rgba(15, 23, 42, 0.1);
+
+  --font: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Plus Jakarta Sans", "Inter", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  position: relative;
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: var(--font);
+}
+
+/* Global Responsive Scrollable Table Container */
+.responsive-table-wrapper,
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Responsive visibility utilities */
+@media (max-width: 640px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+}
+
+@media (min-width: 641px) {
+  .show-on-mobile {
+    display: none !important;
+  }
+}
+
+/* Global utility classes for DocuNexa buttons */
+.btn-docunexa-primary {
+  background: var(--primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+
+  &:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  }
+}
+
+.btn-docunexa-secondary {
+  background: #ffffff;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f1f5f9;
+    color: var(--text-primary);
+  }
+}
+
+.btn-docunexa-outline {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+}
+
+/* Status Badges */
+.badge-docunexa-pending {
+  background: var(--badge-pending-bg);
+  color: var(--badge-pending-text);
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-docunexa-review {
+  background: var(--badge-review-bg);
+  color: var(--badge-review-text);
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-docunexa-approved {
+  background: var(--badge-approved-bg);
+  color: var(--badge-approved-text);
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-docunexa-rejected {
+  background: var(--badge-rejected-bg);
+  color: var(--badge-rejected-text);
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+}

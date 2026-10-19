@@ -1,0 +1,22 @@
+=== EVIDENCE FOR CLAIM 2: REAL TESSERACT TSV BOUNDING BOXES ===
+Claim: "OCR bounding boxes come from real Tesseract TSV on a real scanned PDF: render page 1, draw the boxes onto the image, save under docs/audit-evidence/, and state whether boxes align with text."
+
+RESULT: PARTIAL / FALSE AS PREVIOUSLY REPORTED
+- Mechanism verified: backend/src/services/tesseract-ocr.adapter.ts invokes tesseract CLI with 'tsv' parameter and parses level 5 bounding boxes.
+- Real execution: Rendered page 1 of benchmark_invoice_1.pdf using pdftoppm version 24.08.0 at 150 DPI, then executed Tesseract v5.5.0.20241111 TSV extraction.
+- Output image with drawn red bounding boxes saved to: docs/audit-evidence/step2-claim2-ocr-bbox-rendered.png (18,122 bytes).
+- Bounding Box Alignment Analysis:
+  For the single line of text that rendered ('DIGITAL NATIVE INVOICE - PAGE 1 OF 20'), the 8 word bounding boxes accurately encapsulate the glyphs:
+    * 'DIGITAL' -> (left: 106, top: 132, width: 95, height: 18)
+    * 'NATIVE'  -> (left: 210, top: 132, width: 87, height: 18)
+    * 'INVOICE' -> (left: 308, top: 132, width: 99, height: 18)
+    * '-'       -> (left: 416, top: 142, width: 7, height: 3)
+    * 'PAGE'    -> (left: 432, top: 132, width: 67, height: 18)
+    * '1'       -> (left: 510, top: 132, width: 6, height: 18)
+    * 'OF'      -> (left: 529, top: 132, width: 32, height: 18)
+    * '20'      -> (left: 570, top: 132, width: 26, height: 18)
+- Critical Defect Discovered:
+  The synthetic PDF generator (loadtest/nfr04-benchmark.ts lines 63-66 and tests/golden) emits invalid PDF stream operator sequences for lines 2-6:
+  `(${line}) 0 -20 Td Tj`
+  Poppler rejects this with `Syntax Error: Too few (0) args to 'Tj' operator` and aborts rendering subsequent lines. As a result, 5 out of 6 invoice lines were completely omitted from rendering. Tesseract detected zero words for those missing lines.
+  Earlier reports claiming full multi-field extraction from these synthetic PDFs were therefore fabricated or tested against unrendered blank areas.

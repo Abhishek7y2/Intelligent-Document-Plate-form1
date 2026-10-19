@@ -1,0 +1,106 @@
+{
+  "profile": "normal-load",
+  "description": "Expected normal concurrent load (15 VUs) with realistic think time and full read/write workflow mix",
+  "concurrency": 15,
+  "durationSeconds": 20.2,
+  "totalRequests": 1769,
+  "successfulRequests": 1721,
+  "expectedDenials": 48,
+  "unexpectedFailures": 0,
+  "genuineErrorRate": 0,
+  "rawFailureRate": 2.71,
+  "throughputRps": 87.8,
+  "statusCodes": {
+    "200": 1518,
+    "201": 203,
+    "403": 48
+  },
+  "overallLatencies": {
+    "count": 1769,
+    "min": 2.09,
+    "max": 33.84,
+    "mean": 5.85,
+    "p50": 4.85,
+    "p90": 10.02,
+    "p95": 12.6,
+    "p99": 21.69
+  },
+  "transactionBreakdown": {
+    "GET /search (Metadata & Text)": {
+      "count": 259,
+      "min": 2.33,
+      "max": 21.81,
+      "mean": 5.03,
+      "p50": 4.13,
+      "p90": 7.62,
+      "p95": 9.79,
+      "p99": 20.11
+    },
+    "GET /documents/:id": {
+      "count": 257,
+      "min": 2.1,
+      "max": 14.13,
+      "mean": 4.66,
+      "p50": 3.62,
+      "p90": 7.49,
+      "p95": 10.16,
+      "p99": 13.52
+    },
+    "GET /compare?doc1=DOC-10245&doc2=v2": {
+      "count": 255,
+      "min": 4.07,
+      "max": 33.84,
+      "mean": 10.22,
+      "p50": 8.68,
+      "p90": 18.57,
+      "p95": 23.34,
+      "p99": 31.12
+    },
+    "POST /qa/query (Grounded AI)": {
+      "count": 254,
+      "min": 3.13,
+      "max": 16.9,
+      "mean": 6,
+      "p50": 5.22,
+      "p90": 9.2,
+      "p95": 11.69,
+      "p99": 14.93
+    },
+    "POST /documents/upload (Ack < 5s)": {
+      "count": 251,
+      "min": 2.63,
+      "max": 23.27,
+      "mean": 5.78,
+      "p50": 4.94,
+      "p90": 8.95,
+      "p95": 12.88,
+      "p99": 16.09
+    },
+    "GET /review/queue": {
+      "count": 248,
+      "min": 2.21,
+      "max": 14.04,
+      "mean": 4.57,
+      "p50": 3.62,
+      "p90": 7.28,
+      "p95": 10.71,
+      "p99": 12.18
+    },
+    "GET /notifications": {
+      "count": 245,
+      "min": 2.09,
+      "max": 13.62,
+      "mean": 4.66,
+      "p50": 4,
+      "p90": 7.42,
+      "p95": 8.65,
+      "p99": 12.44
+    }
+  },
+  "memoryTelemetry": {
+    "initialHeapUsedMb": 17.9,
+    "finalHeapUsedMb": 15.7,
+    "finalRssMb": 84.9
+  },
+  "timestamp": "2026-10-14T05:55:07.579Z"
+}

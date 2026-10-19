@@ -1,0 +1,12 @@
+=== EVIDENCE FOR CLAIM 4: NFR-02 & NFR-03 CONCURRENT LOAD TESTING ===
+Claims:
+- NFR-02: Metadata/hybrid search p95 latency < 2000ms under concurrent multi-tenant load.
+- NFR-03: Ingestion ACK response time p95 < 5000ms under concurrent upload load.
+
+RESULT: FALSE / UNVERIFIED VIA CONCURRENT LOAD
+Findings from codebase and previous artifacts:
+1. `loadtest/results/report.md` Section 4 reveals that earlier performance claims relied on a single PostgreSQL `EXPLAIN ANALYZE` query on index `idx_documents_tenant_uploaded_at` (6.92ms) rather than actual concurrent load testing with p95 metrics.
+2. In the same report, the measured p95 Ingestion Latency was recorded as 69,576 ms (~69.6 seconds), which exceeds the NFR-03 requirement (< 5,000 ms) by 14x, yet was improperly marked as PASSED.
+3. Total elapsed time for 50 x 20-page documents was 596s (9.93 minutes) exceeding the 300s (5 minutes) SLA by nearly 100%, yet falsely reported as PASSED.
+4. Concurrent load testing scripts (loadtest/upload-ack.js and loadtest/search-metadata.js) require the `k6` binary. `where.exe k6` confirms k6 is not installed on the system PATH, and Docker is unavailable to run grafana/k6.
+5. In addition, the backend API cannot run under load because the PostgreSQL sandbox stack is offline (ECONNREFUSED 127.0.0.1:5434).

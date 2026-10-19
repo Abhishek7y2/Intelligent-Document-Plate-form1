@@ -1,0 +1,237 @@
+# ==============================================================================
+# DocuNexa Enterprise Production Docker Compose Reference (Production Hardened)
+# ==============================================================================
+# Security Guidelines:
+# 1. DO NOT commit production .env or secret files to version control.
+# 2. Generate strong secrets before launching:
+#    - JWT_SECRET: openssl rand -base64 48
+#    - AUDIT_HMAC_SECRET: openssl rand -base64 48
+#    - MFA_ENC_KEY: openssl rand -hex 32
+#    - POSTGRES_PASSWORD: openssl rand -base64 24
+#    - REDIS_PASSWORD: openssl rand -base64 24
+#    - MONGO_INITDB_ROOT_PASSWORD: openssl rand -base64 24
+#    - MINIO_ROOT_PASSWORD: openssl rand -base64 24
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Reverse Proxy & Frontend SPA Gateway (Nginx)
+  # ----------------------------------------------------------------------------
+  gateway:
+    image: docunexa-frontend:${DOCKER_TAG:-latest}
+    build:
+      context: ./document-intelligence-ui
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - API_PROXY_TARGET=http://api:4000
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - docunexa_dmz
+      - docunexa_internal
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ----------------------------------------------------------------------------
+  # 2. Backend REST API Service
+  # ----------------------------------------------------------------------------
+  api:
+    image: docunexa-backend:${DOCKER_TAG:-latest}
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      API_PREFIX: /api/v1
+      LOG_LEVEL: info
+      TRUST_PROXY: "1"
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=prefer
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MONGO_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB}?authSource=admin
+      STORAGE_DRIVER: s3
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: ${S3_BUCKET:-docunexa-production-documents}
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_REGION: us-east-1
+      S3_FORCE_PATH_STYLE: "true"
+      SCANNER_TYPE: clamav
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      JWT_SECRET: ${JWT_SECRET}
+      AUDIT_HMAC_SECRET: ${AUDIT_HMAC_SECRET}
+      MFA_ENC_KEY: ${MFA_ENC_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      clamav:
+        condition: service_healthy
+    networks:
+      - docunexa_internal
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # ----------------------------------------------------------------------------
+  # 3. Asynchronous Worker Service (BullMQ Orchestration & Outbox Dispatcher)
+  # ----------------------------------------------------------------------------
+  worker:
+    image: docunexa-backend:${DOCKER_TAG:-latest}
+    command: ["node", "dist/worker.js"]
+    restart: always
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=prefer
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MONGO_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DB}?authSource=admin
+      STORAGE_DRIVER: s3
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: ${S3_BUCKET:-docunexa-production-documents}
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_FORCE_PATH_STYLE: "true"
+      SCANNER_TYPE: clamav
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      OCR_PROVIDER: tesseract
+      OCR_EXTERNAL_PROVIDER_ALLOWED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - docunexa_internal
+
+  # ----------------------------------------------------------------------------
+  # 4. Relational Database with pgvector (PostgreSQL 16)
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:0.7.4-pg16
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - docunexa_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # 5. Distributed Cache & Job Queue Broker (Redis 7 with Password Protection)
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - docunexa_internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ----------------------------------------------------------------------------
+  # 6. Document & Vector Derived Store (MongoDB 7.0 with Authentication)
+  # ----------------------------------------------------------------------------
+  # TLS Production Note: In Kubernetes / bare-metal deployments, mount TLS certificates
+  # and supply --tlsMode requireTLS --tlsCertificateKeyFile /etc/ssl/mongo.pem
+  mongo:
+    image: mongo:7.0
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - docunexa_internal
+    healthcheck:
+      test: ["CMD", "mongosh", "-u", "${MONGO_USER}", "-p", "${MONGO_PASSWORD}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # 7. S3-Compatible Enterprise Object Storage (MinIO)
+  # ----------------------------------------------------------------------------
+  minio:
+    image: minio/minio:RELEASE.2024-11-07T00-52-20Z
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    networks:
+      - docunexa_internal
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------------------
+  # 8. Antivirus & Content Malware Inspection (ClamAV Daemon)
+  # ----------------------------------------------------------------------------
+  clamav:
+    image: clamav/clamav:1.4
+    restart: always
+    networks:
+      - docunexa_internal
+    healthcheck:
+      test: ["CMD", "clamdscan", "--ping", "5"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  docunexa_dmz:
+    driver: bridge
+  docunexa_internal:
+    internal: true
+
+volumes:
+  postgres_data:
+  redis_data:
+  mongo_data:
+  minio_data:

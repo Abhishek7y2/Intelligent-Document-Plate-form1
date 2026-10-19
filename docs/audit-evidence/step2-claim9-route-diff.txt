@@ -1,0 +1,30 @@
+=== EVIDENCE FOR CLAIM 9: FRONTEND ROUTE DIFF AGAINST BACKEND & OPENAPI ===
+Claim: "Frontend calls only endpoints that exist (diff frontend api layer against openapi.yaml and the route table)."
+
+RESULT: FALSE (Two Non-Existent Routes Called by Frontend)
+
+1. Discrepancy 1: POST /api/v1/documents (404 NOT FOUND)
+   - Frontend Caller: `document-intelligence-ui/src/app/core/services/http-document.service.ts` line 114
+     `return this.api.post<any>('/documents', formData, headers);`
+   - Backend Route Table: `backend/src/routes/api.routes.ts` line 339 registers:
+     `apiRouter.post('/documents/upload', ... uploadDocumentHandler);`
+   - openapi.yaml line 353 registers:
+     `/documents/upload:`
+   - Defect: When uploading a document via HttpDocumentService, frontend requests `POST /api/v1/documents`, which fails with HTTP 404 (`The requested endpoint '/api/v1/documents' does not exist.`).
+
+2. Discrepancy 2: DELETE /api/v1/documents/:id (404 NOT FOUND)
+   - Frontend Caller: `document-intelligence-ui/src/app/core/services/http-document.service.ts` line 85
+     `return this.api.delete<any>(`/documents/${id}`);`
+   - Backend Route Table: No `DELETE /documents/:id` route exists in `api.routes.ts`.
+   - openapi.yaml: No `DELETE /documents/{id}` exists.
+   - Defect: Document deletion in DocuNexa requires creating and approving a legal-hold-checked deletion case via `/retention/cases`. Calling `deleteDocument(id)` results in HTTP 404.
+
+3. Frontend Fallback Silencing Discrepancies:
+   - In `HttpCompareService` (`http-compare.service.ts` lines 56-59):
+     If `/compare` fails or is unreachable, it silently catches the error and returns synthetic mock diffs (`this.getFallbackDiffs()`) rather than surfacing the error.
+
+4. Backend Routes Not Exposed / Integrated into Frontend UI Services:
+   - Schema template management: `POST /document-types/:typeId/templates`, `POST /document-types/:typeId/templates/:version/publish`
+   - Policy authoring: `POST /document-types/:typeId/policies`, `POST /policies/:id/publish`
+   - Webhook management: `POST /webhooks/subscriptions`, `GET /webhooks/deliveries`
+   - ERP connector mappings: `POST /connectors/mappings`, `POST /connectors/dispatch`

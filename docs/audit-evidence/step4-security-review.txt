@@ -1,0 +1,159 @@
+=== AUDIT EVIDENCE: STEP 4 - COMPREHENSIVE SECURITY REVIEW ===
+
+Total API Routes Registered: 129
+Unauthenticated Routes: 11
+Authenticated Routes Missing Explicit enforceTenantIsolation: 5
+Authenticated Routes Missing requirePermission: 15
+
+--- 1. UNAUTHENTICATED ROUTES ---
+  GET    /health                             -> unknownHandler (RateLimited: false)
+  GET    /ready                              -> unknownHandler (RateLimited: false)
+  POST   /auth/login                         -> loginHandler (RateLimited: true)
+  POST   /auth/request-otp                   -> requestOtpHandler (RateLimited: true)
+  POST   /auth/verify-otp                    -> verifyOtpHandler (RateLimited: true)
+  GET    /auth/smtp-status                   -> smtpStatusHandler (RateLimited: false)
+  POST   /auth/refresh                       -> refreshHandler (RateLimited: true)
+  POST   /auth/logout                        -> logoutHandler (RateLimited: false)
+  POST   /auth/accept-invite                 -> acceptInviteHandler (RateLimited: true)
+  GET    /notifications/stream               -> notificationStreamHandler (RateLimited: false)
+  GET    /openapi.yaml                       -> unknownHandler (RateLimited: false)
+
+--- 2. AUTHENTICATED ROUTES MISSING EXPLICIT enforceTenantIsolation ---
+  GET    /auth/me                            -> meHandler (Perm: NONE)
+  POST   /auth/mfa/enroll                    -> enrollMfaHandler (Perm: NONE)
+  POST   /auth/mfa/verify-enrollment         -> verifyMfaEnrollmentHandler (Perm: NONE)
+  POST   /auth/mfa/disable                   -> disableMfaHandler (Perm: NONE)
+  GET    /roles                              -> getRolesHandler (Perm: NONE)
+
+--- 3. COMPLETE ROUTE SECURITY TABLE ---
+Method | Route Path                           | Auth | TenantIso | Permission        | RateLimit | Handler
+-----------------------------------------------------------------------------------------------------------
+GET    | /health                              | NO   | NO        | -                 | NO        | unknownHandler
+GET    | /ready                               | NO   | NO        | -                 | NO        | unknownHandler
+POST   | /auth/login                          | NO   | NO        | -                 | YES       | loginHandler
+POST   | /auth/request-otp                    | NO   | NO        | -                 | YES       | requestOtpHandler
+POST   | /auth/verify-otp                     | NO   | NO        | -                 | YES       | verifyOtpHandler
+GET    | /auth/smtp-status                    | NO   | NO        | -                 | NO        | smtpStatusHandler
+POST   | /auth/refresh                        | NO   | NO        | -                 | YES       | refreshHandler
+POST   | /auth/logout                         | NO   | NO        | -                 | NO        | logoutHandler
+GET    | /auth/me                             | YES  | NO        | -                 | NO        | meHandler
+POST   | /auth/accept-invite                  | NO   | NO        | -                 | YES       | acceptInviteHandler
+POST   | /auth/mfa/enroll                     | YES  | NO        | -                 | YES       | enrollMfaHandler
+POST   | /auth/mfa/verify-enrollment          | YES  | NO        | -                 | YES       | verifyMfaEnrollmentHandler
+POST   | /auth/mfa/disable                    | YES  | NO        | -                 | YES       | disableMfaHandler
+GET    | /roles                               | YES  | NO        | -                 | NO        | getRolesHandler
+POST   | /users/invite                        | YES  | YES       | USER_MANAGE       | NO        | inviteUserHandler
+GET    | /users/invitations                   | YES  | YES       | USER_MANAGE       | NO        | listInvitationsHandler
+DELETE | /users/invitations/:id               | YES  | YES       | USER_MANAGE       | NO        | revokeInvitationHandler
+PATCH  | /users/:id/role                      | YES  | YES       | USER_MANAGE       | NO        | updateUserRoleHandler
+GET    | /admin/intake-mailboxes              | YES  | YES       | USER_MANAGE       | NO        | listMailboxesHandler
+POST   | /admin/intake-mailboxes              | YES  | YES       | USER_MANAGE       | NO        | createMailboxHandler
+PATCH  | /admin/intake-mailboxes/:id          | YES  | YES       | USER_MANAGE       | NO        | updateMailboxHandler
+GET    | /admin/trace                         | YES  | YES       | -                 | NO        | getTraceHandler
+GET    | /admin/export-masking-rules          | YES  | YES       | ADMIN_ACCESS      | YES       | listExportMaskingRulesHandler
+POST   | /admin/export-masking-rules          | YES  | YES       | ADMIN_ACCESS      | NO        | createExportMaskingRuleHandler
+GET    | /admin/export-masking-rules/:id      | YES  | YES       | ADMIN_ACCESS      | NO        | getExportMaskingRuleHandler
+PUT    | /admin/export-masking-rules/:id      | YES  | YES       | ADMIN_ACCESS      | NO        | updateExportMaskingRuleHandler
+DELETE | /admin/export-masking-rules/:id      | YES  | YES       | ADMIN_ACCESS      | NO        | deleteExportMaskingRuleHandler
+GET    | /admin/operations/dlq                | YES  | YES       | ADMIN_ACCESS      | NO        | listFailedJobsHandler
+POST   | /admin/operations/dlq/:id/retry      | YES  | YES       | ADMIN_ACCESS      | NO        | retryFailedJobHandler
+POST   | /admin/ai-quality/run                | YES  | YES       | ADMIN_ACCESS      | NO        | triggerAiEvaluationHandler
+GET    | /admin/ai-quality/runs               | YES  | YES       | ADMIN_ACCESS      | NO        | listAiEvaluationRunsHandler
+POST   | /documents/upload                    | YES  | YES       | DOC_UPLOAD        | YES       | uploadDocumentHandler
+GET    | /documents                           | YES  | YES       | DOC_VIEW          | NO        | listDocumentsHandler
+GET    | /documents/:id                       | YES  | YES       | DOC_VIEW          | NO        | getDocumentDetailHandler
+GET    | /documents/:id/pages/:pageNo/image   | YES  | YES       | DOC_VIEW          | NO        | getDocumentPageImageHandler
+POST   | /documents/:id/retry                 | YES  | YES       | DOC_EDIT          | NO        | retryDocumentHandler
+GET    | /documents/:id/attempts              | YES  | YES       | DOC_VIEW          | NO        | listDocumentAttemptsHandler
+POST   | /documents/:id/replace               | YES  | YES       | DOC_UPLOAD        | YES       | replaceDocumentHandler
+GET    | /documents/:id/versions              | YES  | YES       | DOC_VIEW          | NO        | listDocumentVersionsHandler
+POST   | /documents/:id/summary               | YES  | YES       | DOC_VIEW          | NO        | generateSummaryHandler
+GET    | /documents/:id/summary               | YES  | YES       | DOC_VIEW          | NO        | getSummaryHandler
+PUT    | /documents/:id/summary/:summaryId    | YES  | YES       | DOC_EDIT          | NO        | correctSummaryHandler
+POST   | /documents/:id/process-ocr           | YES  | YES       | DOC_EDIT          | NO        | processOcrHandler
+GET    | /documents/:id/ocr                   | YES  | YES       | DOC_VIEW          | NO        | getOcrResultHandler
+GET    | /documents/:id/pages/:pageNumber/geometry | YES  | YES       | DOC_VIEW          | NO        | getPageGeometryHandler
+POST   | /documents/:id/classify              | YES  | YES       | DOC_EDIT          | NO        | classifyDocumentHandler
+GET    | /documents/:id/classification        | YES  | YES       | DOC_VIEW          | NO        | getClassificationHandler
+POST   | /documents/:id/extract               | YES  | YES       | DOC_EDIT          | NO        | extractDocumentHandler
+GET    | /documents/:id/extraction            | YES  | YES       | DOC_VIEW          | NO        | getExtractionHandler
+GET    | /review/queue                        | YES  | YES       | DOC_VIEW          | NO        | getReviewQueueHandler
+GET    | /review/:id                          | YES  | YES       | DOC_VIEW          | NO        | getReviewWorkbenchHandler
+POST   | /review/:id/fields/:key              | YES  | YES       | DOC_EDIT          | NO        | correctFieldHandler
+POST   | /review/:id/decision                 | YES  | YES       | DOC_VERIFY        | NO        | submitReviewDecisionHandler
+GET    | /review/:id/audit                    | YES  | YES       | DOC_VIEW          | NO        | getReviewAuditLogsHandler
+GET    | /approvals/queue                     | YES  | YES       | DOC_VIEW          | NO        | getApprovalQueueHandler
+GET    | /approvals/:id                       | YES  | YES       | DOC_VIEW          | NO        | getApprovalDetailsHandler
+POST   | /approvals/:id/decide                | YES  | YES       | DOC_APPROVE       | NO        | submitApprovalDecisionHandler
+POST   | /erp/publish/:id                     | YES  | YES       | DOC_APPROVE       | NO        | publishDocumentToErpHandler
+GET    | /erp/status/:id                      | YES  | YES       | DOC_VIEW          | NO        | getErpPublicationStatusHandler
+GET    | /document-types                      | YES  | YES       | SCHEMA_VIEW       | NO        | listDocumentTypesHandler
+GET    | /document-types/:id                  | YES  | YES       | SCHEMA_VIEW       | NO        | getDocumentTypeHandler
+POST   | /document-types                      | YES  | YES       | SCHEMA_MANAGE     | NO        | createDocumentTypeHandler
+PUT    | /document-types/:id                  | YES  | YES       | SCHEMA_MANAGE     | NO        | updateDocumentTypeHandler
+GET    | /document-types/:typeId/templates    | YES  | YES       | SCHEMA_VIEW       | NO        | listTemplatesHandler
+GET    | /extraction-templates                | YES  | YES       | SCHEMA_VIEW       | NO        | listTemplatesHandler
+GET    | /document-types/:typeId/templates/:version | YES  | YES       | SCHEMA_VIEW       | NO        | getTemplateHandler
+POST   | /document-types/:typeId/templates    | YES  | YES       | SCHEMA_MANAGE     | NO        | createDraftTemplateHandler
+POST   | /document-types/:typeId/templates/:version/publish | YES  | YES       | SCHEMA_MANAGE     | NO        | publishTemplateHandler
+POST   | /document-types/:typeId/templates/validate | YES  | YES       | SCHEMA_VIEW       | NO        | validateTemplateHandler
+GET    | /policies                            | YES  | YES       | POLICY_VIEW       | NO        | listPoliciesHandler
+GET    | /document-types/:typeId/policies     | YES  | YES       | POLICY_VIEW       | NO        | listPoliciesHandler
+GET    | /policies/:id                        | YES  | YES       | POLICY_VIEW       | NO        | getPolicyHandler
+POST   | /document-types/:typeId/policies     | YES  | YES       | POLICY_MANAGE     | NO        | createDraftPolicyHandler
+POST   | /policies/:id/publish                | YES  | YES       | POLICY_MANAGE     | NO        | publishPolicyHandler
+POST   | /policies/:id/evaluate               | YES  | YES       | POLICY_EVALUATE   | NO        | evaluatePolicyHandler
+GET    | /search                              | YES  | YES       | DOC_VIEW          | NO        | searchHandler
+POST   | /search                              | YES  | YES       | DOC_VIEW          | NO        | searchHandler
+POST   | /search/index/:id                    | YES  | YES       | DOC_EDIT          | NO        | indexDocumentHandler
+GET    | /compare                             | YES  | YES       | COMPARE_VIEW      | NO        | compareDocumentsHandler
+POST   | /compare                             | YES  | YES       | COMPARE_VIEW      | NO        | compareDocumentsHandler
+GET    | /compare/:id                         | YES  | YES       | COMPARE_VIEW      | NO        | getComparisonHandler
+POST   | /qa/query                            | YES  | YES       | QA_QUERY          | NO        | askQuestionHandler
+GET    | /qa/documents                        | YES  | YES       | DOC_VIEW          | NO        | listQaDocumentsHandler
+POST   | /qa/citations/verify                 | YES  | YES       | DOC_VIEW          | NO        | verifyCitationHandler
+GET    | /qa/citations/:documentId/verify     | YES  | YES       | DOC_VIEW          | NO        | verifyCitationHandler
+POST   | /qa/traces/:traceId/feedback         | YES  | YES       | -                 | NO        | submitFeedbackHandler
+GET    | /notifications                       | YES  | YES       | -                 | NO        | listNotificationsHandler
+PATCH  | /notifications/:id/read              | YES  | YES       | -                 | NO        | markNotificationReadHandler
+POST   | /notifications/:id/read              | YES  | YES       | -                 | NO        | markNotificationReadHandler
+POST   | /notifications/read-all              | YES  | YES       | -                 | NO        | markAllNotificationsReadHandler
+POST   | /notifications/stream-ticket         | YES  | YES       | -                 | NO        | createStreamTicketHandler
+GET    | /notifications/stream                | NO   | NO        | -                 | NO        | notificationStreamHandler
+GET    | /notifications/preferences           | YES  | YES       | -                 | NO        | getPreferencesHandler
+PATCH  | /notifications/preferences           | YES  | YES       | -                 | NO        | updatePreferenceHandler
+GET    | /reports/governance                  | YES  | YES       | REPORT_GENERATE   | NO        | getGovernanceReportHandler
+GET    | /reports/kpis                        | YES  | YES       | REPORT_GENERATE   | NO        | getOperationalKpiSummaryHandler
+GET    | /reports/extraction-quality          | YES  | YES       | REPORT_GENERATE   | NO        | getExtractionQualityHandler
+POST   | /exports/request                     | YES  | YES       | REPORT_GENERATE   | NO        | requestExportHandler
+GET    | /exports                             | YES  | YES       | REPORT_GENERATE   | NO        | listExportJobsHandler
+GET    | /exports/:id                         | YES  | YES       | REPORT_GENERATE   | NO        | getExportJobHandler
+GET    | /exports/:id/download                | YES  | YES       | -                 | NO        | downloadExportHandler
+POST   | /exports/:id/revoke                  | YES  | YES       | REPORT_GENERATE   | NO        | revokeExportHandler
+GET    | /openapi.yaml                        | NO   | NO        | -                 | NO        | unknownHandler
+POST   | /webhooks/subscriptions              | YES  | YES       | ADMIN_ACCESS      | NO        | createSubscriptionHandler
+GET    | /webhooks/subscriptions              | YES  | YES       | ADMIN_ACCESS      | NO        | listSubscriptionsHandler
+DELETE | /webhooks/subscriptions/:id          | YES  | YES       | ADMIN_ACCESS      | NO        | deleteSubscriptionHandler
+POST   | /webhooks/deliveries/:id/retry       | YES  | YES       | ADMIN_ACCESS      | NO        | retryDeliveryHandler
+GET    | /webhooks/deliveries                 | YES  | YES       | ADMIN_ACCESS      | NO        | getDeliveryHistoryHandler
+POST   | /connectors/mappings                 | YES  | YES       | ADMIN_ACCESS      | NO        | upsertMappingHandler
+GET    | /connectors/mappings                 | YES  | YES       | ADMIN_ACCESS      | NO        | getMappingHandler
+POST   | /connectors/mappings/:id/sign-off    | YES  | YES       | ADMIN_ACCESS      | NO        | signOffMappingHandler
+POST   | /connectors/dispatch                 | YES  | YES       | DOC_APPROVE       | NO        | dispatchConnectorHandler
+GET    | /retention/policies                  | YES  | YES       | POLICY_VIEW       | NO        | listRetentionPoliciesHandler
+POST   | /retention/policies                  | YES  | YES       | POLICY_MANAGE     | NO        | upsertRetentionPolicyHandler
+GET    | /retention/holds                     | YES  | YES       | ADMIN_ACCESS      | NO        | listLegalHoldsHandler
+POST   | /retention/holds                     | YES  | YES       | ADMIN_ACCESS      | NO        | placeLegalHoldHandler
+POST   | /retention/holds/:id/release         | YES  | YES       | ADMIN_ACCESS      | NO        | releaseLegalHoldHandler
+GET    | /retention/cases                     | YES  | YES       | ADMIN_ACCESS      | NO        | listDeletionCasesHandler
+POST   | /retention/cases                     | YES  | YES       | ADMIN_ACCESS      | NO        | requestDeletionCaseHandler
+POST   | /retention/cases/:id/approve         | YES  | YES       | ADMIN_ACCESS      | NO        | approveDeletionCaseHandler
+POST   | /retention/cases/:id/purge           | YES  | YES       | ADMIN_ACCESS      | NO        | executePurgeHandler
+GET    | /retention/cases/:id/evidence        | YES  | YES       | ADMIN_ACCESS      | NO        | getPurgeEvidenceHandler
+GET    | /retention/ledger                    | YES  | YES       | ADMIN_ACCESS      | NO        | listPurgeLedgerHandler
+GET    | /tasks                               | YES  | YES       | DOC_VIEW          | NO        | listTasksHandler
+POST   | /tasks                               | YES  | YES       | DOC_EDIT          | NO        | createTaskHandler
+GET    | /tasks/:id                           | YES  | YES       | DOC_VIEW          | NO        | getTaskHandler
+PATCH  | /tasks/:id                           | YES  | YES       | DOC_EDIT          | NO        | updateTaskHandler
+POST   | /tasks/:id/comments                  | YES  | YES       | DOC_VIEW          | NO        | addTaskCommentHandler
+GET    | /tasks/:id/comments                  | YES  | YES       | DOC_VIEW          | NO        | listTaskCommentsHandler

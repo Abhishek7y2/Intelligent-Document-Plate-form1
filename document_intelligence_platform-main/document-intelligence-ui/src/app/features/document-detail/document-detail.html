@@ -1,0 +1,604 @@
+<div class="document-detail-page">
+  @if (isLoading()) {
+    <app-loading-state layout="split-pane" message="Fetching document metadata, version history, and access rules..."></app-loading-state>
+  } @else if (hasError()) {
+    <app-error-state [variant]="errorVariant()" (retry)="retryLoad()"></app-error-state>
+  } @else {
+
+  <!-- =========================================================================
+       1. TOP BREADCRUMB & CONTROL HEADER
+       ========================================================================= -->
+  <header class="detail-header-panel">
+    <div class="header-top-row">
+      <div class="header-left-col">
+        <!-- Breadcrumb / Back button -->
+        <button type="button" class="btn-back-pill" (click)="goBack()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>Back to Documents</span>
+        </button>
+
+        <div class="doc-identity-cluster">
+          <div class="file-icon-badge">{{ document.fileName.endsWith('.docx') ? 'DOCX' : 'PDF' }}</div>
+          <div class="doc-text-block">
+            <div class="title-with-badge">
+              <h1 class="doc-heading">{{ document.name }}</h1>
+              <app-status-badge [status]="document.status"></app-status-badge>
+            </div>
+            <div class="doc-meta-subline">
+              <span class="meta-tag id-tag">{{ document.id }}</span>
+              <span class="meta-separator">•</span>
+              <span>{{ document.type }}</span>
+              <span class="meta-separator">•</span>
+              <span>{{ document.pages }} Pages</span>
+              <span class="meta-separator">•</span>
+              <span>{{ document.size }}</span>
+              <span class="meta-separator">•</span>
+              <span>Uploaded by <strong class="owner-name">{{ document.owner }}</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="header-actions-group">
+        @if (isFailedStatus()) {
+          <button type="button" class="btn-action-danger" (click)="openRetryConfirmation()" [disabled]="isRetrying()">
+            🔄 {{ isRetrying() ? 'Retrying...' : 'Retry Processing' }}
+          </button>
+        }
+
+        <button type="button" class="btn-action-secondary" (click)="openReplaceModal()">
+          📄 Replace File
+        </button>
+
+        <button type="button" class="btn-action-ghost" (click)="isCommentsDrawerOpen = !isCommentsDrawerOpen">
+          💬 Comments <span class="action-count-bubble">{{ comments.length }}</span>
+        </button>
+
+        <button type="button" class="btn-action-ghost" (click)="navigateToCompare()">
+          🔍 Compare Studio
+        </button>
+
+        <button type="button" class="btn-action-ghost" (click)="downloadViaSignedUrl()">
+          ⬇ Signed Download
+        </button>
+
+        <button type="button" class="btn-action-primary" (click)="exportMetadataWithMasking()">
+          📤 Export Metadata
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       2. KPI SUMMARY METRIC CARDS
+       ========================================================================= -->
+  <section class="detail-kpi-metrics-grid">
+    <div class="kpi-mini-card">
+      <div class="kpi-icon-bubble" [class.red]="isFailedStatus()" [class.green]="!isFailedStatus()">
+        {{ isFailedStatus() ? '✕' : '✓' }}
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Lifecycle State</span>
+        <strong class="kpi-val">{{ document.status }}</strong>
+        <span class="kpi-sub" [class.red-text]="isFailedStatus()" [class.green-text]="!isFailedStatus()">
+          {{ isFailedStatus() ? 'Processing Failed' : 'Compliant & Audited' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="kpi-mini-card">
+      <div class="kpi-icon-bubble purple">🎯</div>
+      <div class="kpi-data">
+        <span class="kpi-label">Extraction Accuracy</span>
+        <strong class="kpi-val">96.8%</strong>
+        <span class="kpi-sub green-text">↑ High Confidence</span>
+      </div>
+    </div>
+
+    <div class="kpi-mini-card">
+      <div class="kpi-icon-bubble amber">⚙️</div>
+      <div class="kpi-data">
+        <span class="kpi-label">Processing Retries</span>
+        <strong class="kpi-val">{{ retryCount() }} Attempts</strong>
+        <span class="kpi-sub" [class.red-text]="lastError()">
+          {{ lastError() ? 'Error logged' : 'Pipeline stable' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="kpi-mini-card">
+      <div class="kpi-icon-bubble blue">🕒</div>
+      <div class="kpi-data">
+        <span class="kpi-label">Active Revision</span>
+        <strong class="kpi-val">v3.0 (Latest)</strong>
+        <span class="kpi-sub">{{ backendVersions().length || versions.length }} Historical Revisions</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       SIGNED URL ACTIVE BANNER (IF TRIGGERED)
+       ========================================================================= -->
+  @if (document.signedUrlExpiry) {
+    <div class="signed-url-alert-banner">
+      <div class="alert-left-flex">
+        <span class="lock-icon">🔒</span>
+        <div>
+          <strong class="alert-headline">Temporary Signed URL Active (TTL 15 mins):</strong>
+          <span class="alert-desc">{{ document.signedUrlExpiry }}</span>
+        </div>
+      </div>
+      <a [href]="document.signedUrl" target="_blank" class="btn-download-signed">
+        Download Original Bytes (PDF) ›
+      </a>
+    </div>
+  }
+
+  <!-- =========================================================================
+       FAILED DOCUMENT WARNING BANNER (IF FAILED)
+       ========================================================================= -->
+  @if (isFailedStatus()) {
+    <div class="failed-document-banner" role="alert">
+      <div class="alert-content">
+        <span class="error-badge-icon">⚠️</span>
+        <div>
+          <strong>Document Processing Failed</strong>
+          <p>{{ lastError() || 'The processing pipeline encountered an error. Review attempts below and click Retry to reprocess.' }}</p>
+        </div>
+      </div>
+      <button type="button" class="btn-retry-banner" (click)="openRetryConfirmation()" [disabled]="isRetrying()">
+        🔄 Retry Processing
+      </button>
+    </div>
+  }
+
+  <!-- =========================================================================
+       3. MAIN TWO-COLUMN CONTENT GRID
+       ========================================================================= -->
+  <main class="detail-main-grid">
+
+    <!-- LEFT COLUMN: EXTRACTED SCHEMA FIELDS & AI GROUNDED SUMMARY -->
+    <div class="left-col-stack">
+      <!-- EXTRACTED SCHEMA FIELDS -->
+      <section class="content-panel-card">
+        <div class="panel-card-header">
+          <div class="panel-header-titles">
+            <h3 class="panel-card-title">Extracted Schema Fields</h3>
+            <span class="panel-card-subtitle">AI OCR extracted attributes with confidence scores and policy masking</span>
+          </div>
+
+          <!-- In-Document Find On Page -->
+          <div class="find-on-page-wrapper">
+            <span class="search-lens">🔍</span>
+            <input type="text" placeholder="Filter extracted fields..." class="find-input-box" />
+          </div>
+        </div>
+
+        <div class="extracted-fields-list">
+          @for (f of extractedFields; track f.label) {
+            <div class="field-entity-row" [class.field-restricted]="f.isRestricted">
+              <div class="field-meta-top">
+                <span class="field-label-text">{{ f.label }}</span>
+                <div class="field-badges-group">
+                  @if (f.isRestricted) {
+                    <span class="restricted-badge-pill">🔒 Restricted</span>
+                  }
+                  <span class="confidence-pill" [class.high]="!f.isRestricted">{{ f.confidence }} Conf</span>
+                </div>
+              </div>
+              <div class="field-value-display">
+                <strong class="value-text" [class.masked-text]="f.isRestricted">{{ f.value }}</strong>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="panel-card-footer">
+          <a [routerLink]="['/review', document.id]" class="btn-workbench-link">
+            Open in Review Workbench (HITL Editor with Bounding Boxes) ›
+          </a>
+        </div>
+      </section>
+
+      <!-- B.3: GROUNDED EXECUTIVE SUMMARY PANEL (AI-007) -->
+      <section class="content-panel-card summary-card">
+        <div class="panel-card-header">
+          <div class="panel-header-titles">
+            <h3 class="panel-card-title">AI Grounded Summary (AI-007)</h3>
+            <span class="panel-card-subtitle">Grounded synthesis with page citations and reviewer audit trail</span>
+          </div>
+          @if (!summaryData()) {
+            <button type="button" class="btn-generate-summary" (click)="triggerGenerateSummary()" [disabled]="isGeneratingSummary()">
+              ✨ {{ isGeneratingSummary() ? 'Synthesizing...' : 'Generate Summary' }}
+            </button>
+          } @else if (!isEditingSummary()) {
+            <button type="button" class="btn-edit-summary" (click)="startEditingSummary()">
+              ✏️ Correct Summary
+            </button>
+          }
+        </div>
+
+        <div class="summary-body">
+          @if (!summaryData() && !isGeneratingSummary()) {
+            <div class="summary-empty-state">
+              <span class="empty-icon">📝</span>
+              <p>No summary has been generated for this document yet.</p>
+              <button type="button" class="btn-generate-pills" (click)="triggerGenerateSummary()">
+                ✨ Generate Grounded Summary
+              </button>
+            </div>
+          } @else if (summaryData()?.status === 'ABSTAINED') {
+            <div class="summary-abstained-banner">
+              <span class="abstain-icon">🛑</span>
+              <div>
+                <strong>Honest Abstention: No Verifiable Summary</strong>
+                <p>The model abstained from summarizing because grounding thresholds could not be met with high confidence from verifiable document citations.</p>
+              </div>
+            </div>
+          } @else if (summaryData()) {
+            @if (isEditingSummary()) {
+              <div class="summary-edit-form">
+                <label class="form-label" for="editSummaryText">Corrected Summary Text:</label>
+                <textarea
+                  id="editSummaryText"
+                  [(ngModel)]="editSummaryText"
+                  rows="4"
+                  class="summary-textarea"
+                  placeholder="Enter corrected summary text..."
+                ></textarea>
+
+                <label class="form-label" for="editSummaryReason">Reason for Correction (Audited):</label>
+                <input
+                  id="editSummaryReason"
+                  type="text"
+                  [(ngModel)]="editSummaryReason"
+                  class="summary-reason-input"
+                  placeholder="e.g. Corrected supplier payment schedule per amendment #2"
+                />
+
+                <div class="edit-actions-row">
+                  <button type="button" class="btn-cancel-edit" (click)="cancelEditingSummary()">Cancel</button>
+                  <button type="button" class="btn-save-edit" (click)="saveSummaryCorrection()" [disabled]="isSavingSummary() || !editSummaryText.trim()">
+                    {{ isSavingSummary() ? 'Saving...' : 'Save Correction' }}
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <div class="summary-content-display">
+                <p class="summary-text">{{ summaryData().summary || summaryData().summaryText }}</p>
+
+                <!-- Grounding Evidence Quotes (Clickable to jump to page in viewer) -->
+                @if (summaryData().evidenceQuotes?.length) {
+                  <div class="evidence-quotes-block">
+                    <span class="evidence-title">Verified Page Evidence Citations:</span>
+                    <div class="evidence-tags-list">
+                      @for (eq of summaryData().evidenceQuotes; track $index) {
+                        <button type="button" class="evidence-chip-btn" (click)="jumpToEvidence(eq.page)" title="Jump to page {{ eq.page }} in Source Viewer">
+                          <span class="page-badge">Page {{ eq.page }}</span>
+                          <span class="quote-snippet">"{{ eq.quote }}"</span>
+                          <span class="jump-arrow">↗</span>
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Reviewer Corrections History -->
+                @if (summaryData().corrections?.length) {
+                  <div class="summary-corrections-history">
+                    <span class="corrections-title">Correction History:</span>
+                    <div class="corrections-list">
+                      @for (cor of summaryData().corrections; track cor.id || $index) {
+                        <div class="correction-item">
+                          <div class="correction-meta">
+                            <strong>{{ cor.reviewerName || 'Reviewer' }}</strong>
+                            <span>{{ cor.createdAt | date:'short' }}</span>
+                          </div>
+                          @if (cor.reason) {
+                            <div class="correction-reason">Reason: <em>{{ cor.reason }}</em></div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN: PROCESSING ATTEMPTS & VERTICAL VERSION TIMELINE -->
+    <div class="right-col-stack">
+      <!-- B.1: PROCESSING ATTEMPTS PANEL -->
+      <section class="content-panel-card processing-panel-card">
+        <div class="panel-card-header">
+          <div class="panel-header-titles">
+            <h3 class="panel-card-title">Processing Attempts & Pipeline History</h3>
+            <span class="panel-card-subtitle">Detailed execution log of OCR, extraction, and validation stages</span>
+          </div>
+          @if (isFailedStatus()) {
+            <button type="button" class="btn-retry-mini" (click)="openRetryConfirmation()" [disabled]="isRetrying()">
+              🔄 Retry
+            </button>
+          }
+        </div>
+
+        <div class="processing-attempts-list">
+          @if (processingAttempts().length === 0) {
+            <div class="empty-attempts">
+              <span>✓ Initial ingest processing completed smoothly</span>
+            </div>
+          } @else {
+            @for (att of processingAttempts(); track att.attemptNumber || $index) {
+              <div class="attempt-item-row" [class.attempt-failed]="att.status === 'FAILED'">
+                <div class="attempt-left">
+                  <span class="attempt-num">#{{ att.attemptNumber }}</span>
+                  <div class="attempt-info">
+                    <div class="attempt-stage-line">
+                      <strong>{{ att.stage }}</strong>
+                      <span class="attempt-status-pill" [class.success]="att.status === 'COMPLETED' || att.status === 'SUCCESS'" [class.failed]="att.status === 'FAILED'">
+                        {{ att.status }}
+                      </span>
+                    </div>
+                    @if (att.errorMessage) {
+                      <div class="attempt-error-text">{{ att.errorMessage }}</div>
+                    }
+                  </div>
+                </div>
+                <div class="attempt-meta-right">
+                  <span class="attempt-duration">{{ att.durationMs ? att.durationMs + ' ms' : '' }}</span>
+                  <span class="attempt-time">{{ att.startedAt | date:'shortTime' }}</span>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </section>
+
+      <!-- B.2: VERTICAL VERSION TIMELINE -->
+      <section class="content-panel-card">
+        <div class="panel-card-header">
+          <div class="panel-header-titles">
+            <h3 class="panel-card-title">Vertical Version Timeline</h3>
+            <span class="panel-card-subtitle">Immutable audit trail of document revisions and OCR transformations</span>
+          </div>
+          <button type="button" class="btn-replace-mini" (click)="openReplaceModal()">
+            + Replace File
+          </button>
+        </div>
+
+        <div class="vertical-timeline-container">
+          @for (v of versions; track v.version; let idx = $index) {
+            <div class="timeline-revision-item" [class.current-active]="v.isCurrent">
+              <div class="timeline-indicator-node">
+                <div class="timeline-dot"></div>
+              </div>
+
+              <div class="timeline-revision-card">
+                <div class="revision-header-row">
+                  <div class="revision-tag-group">
+                    <span class="version-tag-pill" [class.active-tag]="v.isCurrent">{{ v.version }}</span>
+                    <app-status-badge [status]="v.status"></app-status-badge>
+                  </div>
+                  <span class="revision-time-stamp">{{ v.date }} • {{ v.time }}</span>
+                </div>
+
+                <p class="revision-summary-text">{{ v.changeSummary }}</p>
+
+                <div class="revision-meta-footer">
+                  <span class="meta-author">By <strong>{{ v.uploadedBy }}</strong></span>
+                  <span class="meta-sep">•</span>
+                  <span>{{ v.size }}</span>
+                  <span class="meta-sep">•</span>
+                  <span>{{ v.pages }} pages</span>
+                </div>
+
+                <div class="revision-action-row">
+                  @if (!v.isCurrent) {
+                    <button type="button" class="btn-inspect-historical" (click)="openHistoricalVersionReadOnly(v)">
+                      👁️ Inspect Read-Only
+                    </button>
+                  } @else {
+                    <span class="active-version-indicator">★ Currently Active Production Version</span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+
+  </main>
+  }
+
+  <!-- =========================================================================
+       4. COMMENTS & CLARIFICATIONS DRAWER
+       ========================================================================= -->
+  @if (isCommentsDrawerOpen) {
+    <div class="drawer-backdrop-overlay" (click)="isCommentsDrawerOpen = false"></div>
+    <aside class="enterprise-drawer" role="dialog" aria-modal="true">
+      <div class="drawer-header-bar">
+        <div>
+          <h3 class="drawer-title">Document Notes & Clarifications</h3>
+          <span class="drawer-sub">Threaded audit notes for reviewers and approvers</span>
+        </div>
+        <button type="button" class="btn-drawer-close" (click)="isCommentsDrawerOpen = false">✕</button>
+      </div>
+
+      <div class="drawer-body-content">
+        <!-- New Comment Input -->
+        <div class="comment-compose-card">
+          <textarea
+            [(ngModel)]="commentText"
+            placeholder="Add an internal reviewer note or clarification..."
+            rows="3"
+            class="comment-input-area"
+          ></textarea>
+          <div class="compose-footer">
+            <button type="button" class="btn-submit-comment" (click)="addComment()">Post Note</button>
+          </div>
+        </div>
+
+        <!-- Comments List -->
+        <div class="comments-thread-list">
+          @for (c of comments; track c.id) {
+            <div class="comment-bubble-item">
+              <div class="comment-author-row">
+                <div class="author-info">
+                  <div class="author-avatar">{{ c.avatar }}</div>
+                  <div>
+                    <strong class="author-name">{{ c.author }}</strong>
+                    <span class="author-role-badge">{{ c.role }}</span>
+                  </div>
+                </div>
+                <span class="comment-time">{{ c.timestamp }}</span>
+              </div>
+              <p class="comment-body-text">{{ c.text }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    </aside>
+  }
+
+  <!-- =========================================================================
+       5. READ-ONLY HISTORICAL VERSION MODAL
+       ========================================================================= -->
+  @if (isHistoricalReadOnlyModalOpen && selectedHistoricalVersion) {
+    <div class="modal-backdrop-overlay" (click)="isHistoricalReadOnlyModalOpen = false">
+      <div class="historical-dialog-card" (click)="$event.stopPropagation()">
+        <div class="dialog-header">
+          <h3>🔒 Read-Only Historical Revision: {{ selectedHistoricalVersion.version }}</h3>
+          <span class="dialog-sub">Revision ID: {{ document.id }}-{{ selectedHistoricalVersion.version }}</span>
+        </div>
+
+        <div class="dialog-body">
+          <div class="immutable-notice">
+            <span class="notice-icon">🛡️</span>
+            <div>
+              <strong>Immutable Storage Guarantee:</strong>
+              <p>Historical versions are preserved as WORM (Write Once, Read Many) blobs for audit compliance.</p>
+            </div>
+          </div>
+
+          <div class="revision-properties-table">
+            <div class="prop-row">
+              <span class="prop-lbl">Uploaded By:</span>
+              <strong class="prop-val">{{ selectedHistoricalVersion.uploadedBy }}</strong>
+            </div>
+            <div class="prop-row">
+              <span class="prop-lbl">Revision Timestamp:</span>
+              <span class="prop-val">{{ selectedHistoricalVersion.date }} at {{ selectedHistoricalVersion.time }}</span>
+            </div>
+            <div class="prop-row">
+              <span class="prop-lbl">Status at Capture:</span>
+              <span class="prop-val">{{ selectedHistoricalVersion.status }}</span>
+            </div>
+            <div class="prop-row">
+              <span class="prop-lbl">Change Summary:</span>
+              <span class="prop-val">{{ selectedHistoricalVersion.changeSummary }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dialog-actions">
+          <button type="button" class="btn-close-dialog" (click)="isHistoricalReadOnlyModalOpen = false">Close Viewer</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- =========================================================================
+       6. RETRY CONFIRMATION MODAL (B.1)
+       ========================================================================= -->
+  @if (showRetryConfirmModal()) {
+    <div class="modal-backdrop-overlay" (click)="showRetryConfirmModal.set(false)">
+      <div class="modal-dialog-card retry-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="retryDialogTitle">
+        <div class="dialog-header">
+          <h3 id="retryDialogTitle">🔄 Confirm Document Reprocessing</h3>
+          <span class="dialog-sub">Document ID: {{ document.id }}</span>
+        </div>
+        <div class="dialog-body">
+          <p>Are you sure you want to trigger a manual retry for this document? The system will re-enqueue processing starting from the failed stage.</p>
+          @if (lastError()) {
+            <div class="retry-error-preview">
+              <span class="error-label">Previous Error:</span>
+              <p class="error-msg">{{ lastError() }}</p>
+            </div>
+          }
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="btn-cancel-modal" (click)="showRetryConfirmModal.set(false)">Cancel</button>
+          <button type="button" class="btn-confirm-retry" (click)="confirmRetry()" [disabled]="isRetrying()">
+            {{ isRetrying() ? 'Submitting Retry...' : 'Confirm & Reprocess' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- =========================================================================
+       7. REPLACE FILE MODAL (B.2)
+       ========================================================================= -->
+  @if (showReplaceModal()) {
+    <div class="modal-backdrop-overlay" (click)="showReplaceModal.set(false)">
+      <div class="modal-dialog-card replace-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="replaceDialogTitle">
+        <div class="dialog-header">
+          <h3 id="replaceDialogTitle">📄 Replace Document File</h3>
+          <span class="dialog-sub">Creates a new version and restarts review</span>
+        </div>
+        <div class="dialog-body">
+          <!-- Critical warning banner (B.2) -->
+          <div class="replace-warning-banner" role="alert">
+            <span class="warning-icon">⚠️</span>
+            <div>
+              <strong>Important Notice:</strong>
+              <p>Replacing this document's file will create a new version revision, restart the entire human-in-the-loop review workflow, and supersede any pending approvals.</p>
+            </div>
+          </div>
+
+          <div class="file-picker-group">
+            <label class="form-label" for="replaceFileInput">Choose Replacement File (Max 25 MB):</label>
+            <input
+              id="replaceFileInput"
+              type="file"
+              accept=".pdf,.docx,.png,.jpg,.jpeg,.tiff,.tif"
+              (change)="onReplaceFileSelected($event)"
+              class="file-input-control"
+            />
+            <span class="file-hint">Supported formats: PDF, DOCX, PNG, JPG, TIFF</span>
+          </div>
+
+          @if (replaceError) {
+            <div class="file-error-alert">{{ replaceError }}</div>
+          }
+          @if (replaceFile) {
+            <div class="selected-file-pill">
+              <span>📎 {{ replaceFile.name }} ({{ (replaceFile.size / 1024).toFixed(0) }} KB)</span>
+            </div>
+          }
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="btn-cancel-modal" (click)="showReplaceModal.set(false)">Cancel</button>
+          <button type="button" class="btn-confirm-replace" (click)="confirmReplace()" [disabled]="!replaceFile || isReplacing()">
+            {{ isReplacing() ? 'Uploading & Replacing...' : 'Replace & Restart Review' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- TOAST NOTIFICATION -->
+  @if (toastMessage) {
+    <div class="enterprise-toast-popup">
+      <span>{{ toastMessage }}</span>
+    </div>
+  }
+</div>

@@ -1,0 +1,143 @@
+.dev-panel-wrapper {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10000;
+  font-family: 'Inter', sans-serif;
+}
+
+.dev-panel-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #0F172A;
+  color: #F8FAFC;
+  border: 1px solid #334155;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
+
+  &:hover {
+    background: #1E293B;
+  }
+
+  .pill-badge {
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 10px;
+
+    &.danger {
+      background: #DC2626;
+      color: #FFFFFF;
+    }
+  }
+}
+
+.dev-panel-card {
+  position: absolute;
+  bottom: 44px;
+  right: 0;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.2s ease;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #E2E8F0;
+
+  h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0F172A;
+    margin: 0;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #64748B;
+    cursor: pointer;
+  }
+}
+
+.control-group {
+  margin-bottom: 12px;
+
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+  }
+
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .btn-switch {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1px solid #CBD5E1;
+    background: #F8FAFC;
+    color: #475569;
+    cursor: pointer;
+
+    &.active {
+      background: #DC2626;
+      color: #FFFFFF;
+      border-color: #DC2626;
+    }
+  }
+
+  input[type="range"] {
+    width: 100%;
+  }
+
+  .preset-buttons {
+    display: flex;
+    gap: 4px;
+
+    .btn-preset {
+      flex: 1;
+      padding: 5px;
+      font-size: 10px;
+      font-weight: 600;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      background: #F8FAFC;
+      color: #475569;
+      cursor: pointer;
+
+      &.active {
+        background: #4F46E5;
+        color: #FFFFFF;
+        border-color: #4F46E5;
+      }
+    }
+  }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

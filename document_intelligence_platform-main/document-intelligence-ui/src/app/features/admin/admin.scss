@@ -1,0 +1,182 @@
+.admin-shell-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: calc(100vh - 64px);
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.admin-sidebar {
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1rem;
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 1.25rem;
+
+    .logo-icon {
+      font-size: 1.6rem;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .role-badge {
+      background: #e0e7ff;
+      color: #4338ca;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 0.1rem 0.45rem;
+      border-radius: 4px;
+    }
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      color: #475569;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.15s ease-in-out;
+
+      .icon {
+        font-size: 1.1rem;
+      }
+
+      &:hover {
+        background-color: #f1f5f9;
+        color: #0f172a;
+      }
+
+      &.active {
+        background-color: #4f46e5;
+        color: #ffffff;
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+      }
+    }
+  }
+
+  .sidebar-footer {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1rem;
+
+    .tenant-info {
+      font-size: 0.75rem;
+      color: #64748b;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+
+      .val {
+        color: #0f172a;
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+.admin-main {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+
+  .admin-topbar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.85rem 1.5rem;
+
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+
+      .root {
+        color: #64748b;
+      }
+
+      .sep {
+        color: #cbd5e1;
+      }
+
+      .active-crumb {
+        color: #0f172a;
+        font-weight: 700;
+      }
+    }
+  }
+
+  .admin-content-container {
+    padding: 1.5rem;
+    flex: 1;
+  }
+}
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS FOR ADMIN CONSOLE
+   ========================================================================== */
+@media (max-width: 900px) {
+  .admin-shell-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.85rem 1rem;
+
+    .sidebar-header {
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.65rem;
+    }
+
+    .sidebar-nav {
+      flex-direction: row;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      gap: 0.4rem;
+
+      .nav-link {
+        white-space: nowrap;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+      }
+    }
+
+    .sidebar-footer {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-main .admin-topbar {
+    padding: 0.65rem 1rem;
+  }
+
+  .admin-main .admin-content-container {
+    padding: 0.85rem;
+  }
+}

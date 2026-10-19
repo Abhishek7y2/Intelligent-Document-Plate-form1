@@ -1,0 +1,798 @@
+<div class="intake-page">
+
+  <!-- CONTROL HEADER BAR -->
+  <div class="intake-header">
+    <div class="header-left">
+      <span class="eyebrow">DOCUMENT INGESTION ENGINE</span>
+      <h1 class="header-title">Intake & Multi-Channel Batch Pipeline</h1>
+      <p class="header-subtitle">
+        High-concurrency document ingestion with cryptographic SHA-256 hashing, anti-malware verification, and LayoutLMv3 OCR extraction.
+      </p>
+    </div>
+
+    <div class="header-right-zone">
+      <div class="header-stats">
+        <div class="stat-pill">
+          <span class="lbl">Ingested Today</span>
+          <strong class="val">142 Docs</strong>
+        </div>
+        <div class="stat-pill">
+          <span class="lbl">Active Queue</span>
+          <strong class="val blue">{{ batchQueue.length }} Docs</strong>
+        </div>
+        <div class="stat-pill">
+          <span class="lbl">Concurrency</span>
+          <strong class="val green">{{ activeUploadsCount }} / 3 Active</strong>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <a routerLink="/documents" class="secondary-button">
+          📁 View Repository
+        </a>
+        <a routerLink="/search" class="secondary-button">
+          ⚡ RAG Search
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING / ERROR STATES -->
+  @if (isLoading()) {
+    <app-loading-state layout="detail" message="Initializing intake pipeline and batch queue status..."></app-loading-state>
+  } @else if (hasError()) {
+    <app-error-state [variant]="errorVariant()" (retry)="retryLoad()"></app-error-state>
+  } @else {
+
+  <!-- TOP KPI STAT CARDS ROW (SMALL & COMPACT LIKE REVIEW TABS WITH TOP ACCENT BORDER) -->
+  <section class="stats-grid">
+    <!-- 1. Daily Intake Volume -->
+    <div class="stat-card theme-purple">
+      <div class="stat-icon purple">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Daily Intake Volume</span>
+        <div class="stat-val-row">
+          <strong class="stat-value">142 Docs</strong>
+          <span class="trend-tag positive">↑ 14%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. SHA-256 Validated -->
+    <div class="stat-card theme-green">
+      <div class="stat-icon green">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          <polyline points="9 12 11 14 15 10"></polyline>
+        </svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">SHA-256 Validated</span>
+        <div class="stat-val-row">
+          <strong class="stat-value">100%</strong>
+          <span class="trend-tag verified">Tamper-Proof</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Malware Quarantined -->
+    <div class="stat-card theme-orange">
+      <div class="stat-icon orange">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Malware Quarantined</span>
+        <div class="stat-val-row">
+          <strong class="stat-value">{{ quarantinedItems.length }} Files</strong>
+          <span class="trend-tag safe">0 Breaches</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Processing Speed -->
+    <div class="stat-card theme-blue">
+      <div class="stat-icon blue">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Processing Speed</span>
+        <div class="stat-val-row">
+          <strong class="stat-value">1.4 s/page</strong>
+          <span class="trend-tag positive">↑ 0.2s SLA</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  @if (hashCopyToast) {
+    <div class="toast-banner">
+      <span>✓</span> {{ hashCopyToast }}
+    </div>
+  }
+
+  <!-- MAIN DUAL WORKING PANEL (60/40 Split) -->
+  <div class="intake-main-grid">
+    
+    <!-- LEFT PANEL: Intake Wizard & Batch Queue -->
+    <div class="panel-card wizard-panel">
+      
+      <!-- MODE SWITCHER TABS (ENTERPRISE SEGMENTED CONTROL) -->
+      <div class="mode-tabs">
+        <button
+          type="button"
+          class="mode-btn"
+          [class.active]="activeTab === 'batch'"
+          (click)="activeTab = 'batch'"
+        >
+          📦 Multi-File Batch Queue ({{ batchQueue.length }})
+        </button>
+        <button
+          type="button"
+          class="mode-btn"
+          [class.active]="activeTab === 'single'"
+          (click)="activeTab = 'single'"
+        >
+          📄 Single Document Upload
+        </button>
+      </div>
+
+      <!-- STEP 1: Select Category Grid -->
+      <div class="wizard-section">
+        <label class="section-label">1. Target Document Category</label>
+        <div class="category-grid">
+          @for (item of documentTypes; track item.value) {
+            <div
+              class="cat-card"
+              [class.selected]="selectedType === item.value"
+              (click)="selectType(item.value)"
+            >
+              <div class="cat-icon-box">
+                {{ item.icon }}
+              </div>
+              <div class="cat-info">
+                <strong>{{ item.title }}</strong>
+                <span>{{ item.description }}</span>
+              </div>
+              <span class="radio-indicator" [class.checked]="selectedType === item.value"></span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- STEP 2: Drag & Drop Dropzone -->
+      <div class="wizard-section">
+        <label class="section-label">2. Drag & Drop or Select Files (Max 50 MB per file)</label>
+        
+        <div
+          class="dropzone-box"
+          [class.dragging]="isDragging"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+        >
+          <div class="drop-content">
+            <div class="cloud-icon-circle">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+                <path d="M12 12v9"/>
+                <path d="m16 16-4-4-4 4"/>
+              </svg>
+            </div>
+            <p class="drop-title">
+              Drag and drop document files here, or
+            </p>
+            <label for="batchFileInput" class="btn-browse-action">
+              📁 Browse Files
+            </label>
+            <span class="drop-specs">Supported formats: .pdf, .docx, .png, .jpg, .jpeg, .tiff (Up to 50 MB each)</span>
+            <input
+              id="batchFileInput"
+              type="file"
+              [multiple]="activeTab === 'batch'"
+              class="hidden-file-input"
+              (change)="onFilesSelected($event)"
+              accept=".pdf,.docx,.png,.jpg,.jpeg,.tiff"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- BATCH QUEUE SECTION (WHEN MODE IS 'BATCH') -->
+      @if (activeTab === 'batch') {
+        <div class="batch-queue-section">
+          
+          <div class="queue-header-row">
+            <div>
+              <div class="queue-title-badge-group">
+                <h3>Batch Upload Queue</h3>
+                <span class="concurrency-pill">Max Concurrency: 3 Active</span>
+              </div>
+              <span class="queue-sub">
+                Overall Progress: {{ overallQueueProgress }}% · {{ validatedQueueCount }} validated · {{ failedQueueCount }} failed
+              </span>
+            </div>
+
+            <div class="queue-actions">
+              @if (failedQueueCount > 0) {
+                <button type="button" class="secondary-button btn-sm" (click)="retryAllFailed()">
+                  🔄 Retry Failed ({{ failedQueueCount }})
+                </button>
+              }
+              <button type="button" class="secondary-button btn-sm" (click)="clearCompletedQueue()">
+                Clear Validated
+              </button>
+            </div>
+          </div>
+
+          <!-- OVERALL PROGRESS BAR -->
+          @if (batchQueue.length > 0) {
+            <div class="overall-progress-bar">
+              <div class="progress-fill" [style.width.%]="overallQueueProgress"></div>
+            </div>
+          }
+
+          @if (batchQueue.length === 0) {
+            <app-empty-state
+              title="Batch queue is empty"
+              message="Drop up to 10 files above to trigger automated SHA-256 hashing, malware scanning, and OCR ingestion."
+            ></app-empty-state>
+          } @else {
+            <div class="queue-table-wrapper">
+              <table class="queue-table">
+                <thead>
+                  <tr>
+                    <th>Document & Category</th>
+                    <th>Source</th>
+                    <th>SHA-256 Checksum</th>
+                    <th>Status & Scan</th>
+                    <th>Progress</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of batchQueue; track item.id) {
+                    <tr [class.row-failed]="item.status === 'Failed' || item.status === 'Quarantined'" [class.row-duplicate]="item.status === 'Duplicate'">
+                      <td>
+                        <div class="file-name-cell">
+                          <span
+                            class="ext-badge"
+                            [class.badge-pdf]="item.extension === '.pdf'"
+                            [class.badge-docx]="item.extension === '.docx'"
+                            [class.badge-img]="item.extension === '.png' || item.extension === '.jpg' || item.extension === '.jpeg' || item.extension === '.tiff'"
+                          >
+                            {{ item.extension.replace('.', '').toUpperCase() || 'FILE' }}
+                          </span>
+                          <div>
+                            <strong class="fname" title="{{ item.name }}">{{ item.name }}</strong>
+                            <span class="fsize">{{ item.formattedSize }} · {{ item.category }}</span>
+                          </div>
+                        </div>
+                        @if (item.rejectionReason || item.errorReason) {
+                          <div class="rejection-reason-text">
+                            ⚠️ {{ item.rejectionReason || item.errorReason }}
+                          </div>
+                        }
+                      </td>
+
+                      <td>
+                        <span class="source-badge" [class.web]="item.source === 'Web'" [class.api]="item.source === 'API'" [class.email]="item.source === 'Email'">
+                          @if (item.source === 'Web') { 🌐 Web }
+                          @else if (item.source === 'API') { ⚡ API }
+                          @else { ✉️ Email }
+                        </span>
+                      </td>
+
+                      <td>
+                        <div class="checksum-cell">
+                          @if (item.status === 'Hashing') {
+                            <span class="hashing-text">Hashing... {{ item.checksumProgress }}%</span>
+                          } @else if (item.checksum && item.checksum !== 'Calculating...') {
+                            <code class="hash-code" title="{{ item.checksum }}">{{ item.checksum.substring(0, 8) }}...{{ item.checksum.substring(item.checksum.length - 6) }}</code>
+                            <button type="button" class="btn-copy-hash" (click)="copyHash(item.checksum, item.id)" title="Copy full SHA-256 checksum">
+                              {{ copiedHashId === item.id ? '✓ Copied' : '📋 Copy' }}
+                            </button>
+                          } @else {
+                            <span class="hash-placeholder">—</span>
+                          }
+                        </div>
+                      </td>
+
+                      <td>
+                        <div class="status-cell-group">
+                          <span
+                            class="status-chip"
+                            [class.queued]="item.status === 'Queued'"
+                            [class.uploading]="item.status === 'Uploading' || item.status === 'Hashing'"
+                            [class.scanning]="item.status === 'Scanning'"
+                            [class.validated]="item.status === 'Validated'"
+                            [class.quarantined]="item.status === 'Quarantined'"
+                            [class.duplicate]="item.status === 'Duplicate'"
+                            [class.failed]="item.status === 'Failed'"
+                          >
+                            {{ item.status }}
+                          </span>
+
+                          <span class="scan-pill" [class.clean]="item.scanStatus === 'Clean'" [class.infected]="item.scanStatus === 'Infected'">
+                            @if (item.scanStatus === 'Clean') { ✓ Clean }
+                            @else if (item.scanStatus === 'Infected') { ☣️ Infected }
+                            @else { ⏳ Pending }
+                          </span>
+                        </div>
+                      </td>
+
+                      <td>
+                        <div class="progress-cell">
+                          <div class="mini-bar-bg">
+                            <div class="mini-bar-fill" [style.width.%]="item.uploadProgress"></div>
+                          </div>
+                          <span class="pct-text">{{ item.uploadProgress }}%</span>
+                        </div>
+                      </td>
+
+                      <td style="text-align: right;">
+                        <div class="action-cell-btns">
+                          <button type="button" class="btn-table-action" (click)="openTimelineModal(item)" title="View lifecycle timeline">
+                            📜 Timeline
+                          </button>
+
+                          @if (item.status === 'Failed' || item.status === 'Duplicate') {
+                            <button type="button" class="secondary-button btn-sm" (click)="retryQueueItem(item)">
+                              🔄 Retry
+                            </button>
+                          }
+
+                          <button type="button" class="btn-remove-row" (click)="removeQueueItem(item)" title="Remove item">✕</button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- SINGLE DOCUMENT UPLOAD WORKFLOW (WHEN MODE IS 'SINGLE') -->
+      @if (activeTab === 'single') {
+        <div class="single-upload-section">
+          
+          @if (singleSuccessDocId) {
+            <div class="single-success-banner">
+              <span class="success-icon">✓</span>
+              <div class="success-text">
+                <strong>Document Ingested Successfully!</strong>
+                <span>Assigned record ID <strong>{{ singleSuccessDocId }}</strong> under category <strong>{{ selectedType }}</strong>. Document is now live in the repository.</span>
+              </div>
+              <a [routerLink]="['/documents', singleSuccessDocId]" class="secondary-button btn-sm">
+                View Document Record ›
+              </a>
+            </div>
+          }
+
+          @if (errorMessage) {
+            <div class="alert-error">
+              <span>⚠️</span> {{ errorMessage }}
+            </div>
+          }
+
+          @if (selectedFile) {
+            <!-- SELECTED FILE BANNER CARD -->
+            <div class="selected-file-card">
+              <div class="file-icon-badge">
+                {{ selectedFile.name.split('.').pop()?.toUpperCase() || 'FILE' }}
+              </div>
+              <div class="file-info-col">
+                <strong class="file-name-text">{{ selectedFile.name }}</strong>
+                <span class="file-meta-text">
+                  {{ formatFileSize(selectedFile.size) }} · Ready for Processing
+                  @if (singleChecksum) {
+                    · SHA-256: <code class="hash-inline">{{ singleChecksum.substring(0, 10) }}...</code>
+                  }
+                </span>
+              </div>
+              <button type="button" class="btn-remove-selected" (click)="removeSingleFile()" title="Remove file">
+                ✕ Remove
+              </button>
+            </div>
+
+            <!-- SINGLE METADATA ATTRIBUTES (2x2 GRID) -->
+            <div class="single-fields-grid">
+              <div class="form-group">
+                <label>Document Reference / PO #</label>
+                <input
+                  type="text"
+                  [(ngModel)]="referenceNumber"
+                  placeholder="e.g. PO-2026-9941 or CTR-8812"
+                  class="enterprise-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Department / Business Unit</label>
+                <select [(ngModel)]="singleDepartment" class="enterprise-select">
+                  <option value="Procurement">Procurement</option>
+                  <option value="Legal & Compliance">Legal & Compliance</option>
+                  <option value="Accounts Payable">Accounts Payable</option>
+                  <option value="Operations">Operations</option>
+                  <option value="Human Resources">Human Resources</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>SLA Priority Level</label>
+                <select [(ngModel)]="singlePriority" class="enterprise-select">
+                  <option value="Standard">Standard (24h Review SLA)</option>
+                  <option value="High Priority">High Priority (4h Review SLA)</option>
+                  <option value="Critical Express">Critical Express (1h Review SLA)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Ingestion Notes / Instructions</label>
+                <input
+                  type="text"
+                  [(ngModel)]="description"
+                  placeholder="Optional instructions for OCR extraction or reviewer..."
+                  class="enterprise-input"
+                />
+              </div>
+            </div>
+
+            <!-- SINGLE FORM ACTION BUTTONS -->
+            <div class="single-actions-row">
+              <button type="button" class="secondary-button" (click)="removeSingleFile()">
+                Reset Form
+              </button>
+              <button
+                type="button"
+                class="primary-button"
+                (click)="submitSingleDocument()"
+                [disabled]="isSubmittingSingle"
+              >
+                @if (isSubmittingSingle) {
+                  <span class="spinner-sm"></span> Processing Ingestion...
+                } @else {
+                  ⚡ Ingest & Process Document
+                }
+              </button>
+            </div>
+          } @else {
+            <div class="single-empty-prompt">
+              <div class="prompt-icon">📄</div>
+              <h4>No Single Document Selected</h4>
+              <p>Select a target category and drop or browse a document above to configure metadata and trigger instant processing.</p>
+            </div>
+          }
+
+        </div>
+      }
+
+    </div>
+
+    <!-- RIGHT PANEL: Live Ingestion Stream & Quarantined Exceptions -->
+    <div class="panel-card stream-panel">
+      
+      <!-- PANEL TABS & SUBMISSIONS FILTER -->
+      <div class="stream-panel-header">
+        <div class="stream-tabs-group">
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeRightTab === 'stream'"
+            (click)="activeRightTab = 'stream'"
+          >
+            ● Ingestion Stream ({{ filteredRecentUploads.length }})
+          </button>
+          <button
+            type="button"
+            class="tab-btn quarantine-tab-btn"
+            [class.active]="activeRightTab === 'quarantine'"
+            (click)="activeRightTab = 'quarantine'"
+          >
+            ⚠️ Quarantined ({{ quarantinedItems.length }})
+          </button>
+        </div>
+
+        @if (activeRightTab === 'stream') {
+          <div class="filter-toggle-group">
+            <button
+              type="button"
+              class="filter-chip-sm"
+              [class.active]="submissionFilter === 'all'"
+              (click)="submissionFilter = 'all'"
+            >
+              All
+            </button>
+            <button
+              type="button"
+              class="filter-chip-sm"
+              [class.active]="submissionFilter === 'mine'"
+              (click)="submissionFilter = 'mine'"
+            >
+              Mine
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- LIVE STREAM VIEW -->
+      @if (activeRightTab === 'stream') {
+        @if (filteredRecentUploads.length === 0) {
+          <app-empty-state
+            title="No submissions found"
+            message="No ingested documents match the selected submission filter."
+          ></app-empty-state>
+        } @else {
+          <div class="recent-uploads-list">
+            @for (item of filteredRecentUploads; track item.id) {
+              <div class="upload-item-card">
+                <div class="item-top">
+                  <span
+                    class="ext-badge-sm"
+                    [class.badge-pdf]="item.extension === '.pdf'"
+                    [class.badge-docx]="item.extension === '.docx'"
+                  >
+                    {{ item.extension.replace('.', '').toUpperCase() }}
+                  </span>
+                  <div class="item-meta">
+                    <div class="id-source-row">
+                      <a [routerLink]="['/documents', item.id]" class="item-id-link">{{ item.id }}</a>
+                      <span class="source-badge-sm">{{ item.source }}</span>
+                    </div>
+                    <strong class="item-name" title="{{ item.name }}">{{ item.name }}</strong>
+                  </div>
+                  <span class="status-chip validated">
+                    {{ item.status }}
+                  </span>
+                </div>
+
+                <div class="item-details-row">
+                  <span>Category: <strong>{{ item.category }}</strong></span>
+                  <span>Size: <strong>{{ item.formattedSize }}</strong></span>
+                  <span>Accuracy: <strong class="text-green">{{ item.confidence }}%</strong></span>
+                </div>
+
+                <div class="item-footer">
+                  <div class="submitter-info">
+                    <span class="avatar-dot">{{ item.submitterInitials }}</span>
+                    <span class="submitter-name">Uploaded by {{ item.submitter }}</span>
+                  </div>
+                  <div class="footer-right">
+                    <span class="time-ago">{{ item.uploadedAt }}</span>
+                    <a [routerLink]="['/documents', item.id]" class="stream-card-link">
+                      View ›
+                    </a>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      <!-- QUARANTINED EXCEPTIONS VIEW (BRD FR-006 & UAT-09) -->
+      @if (activeRightTab === 'quarantine') {
+        <div class="recent-uploads-list">
+          <div class="quarantine-alert-note">
+            <strong>Quarantine Policy (BRD FR-006):</strong> Infected files or documents failing security validation are isolated for human operator analysis without blocking batch ingestion.
+          </div>
+
+          @for (item of quarantinedItems; track item.id) {
+            <div class="upload-item-card quarantine-card">
+              <div class="item-top">
+                <span class="ext-badge-sm badge-err">ERR</span>
+                <div class="item-meta">
+                  <span class="item-id-link text-red">{{ item.id }}</span>
+                  <strong class="item-name">{{ item.name }}</strong>
+                </div>
+                <span class="status-chip quarantined">
+                  Quarantined
+                </span>
+              </div>
+
+              <div class="quarantine-cause-box">
+                <strong>Failure Cause:</strong> {{ item.errorReason }}
+              </div>
+
+              <div class="item-footer">
+                <span class="time-ago">{{ item.uploadedAt }}</span>
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" class="secondary-button btn-sm" (click)="manualOverride(item)">
+                    HITL Override
+                  </button>
+                  <button type="button" class="primary-button btn-sm" (click)="retryQuarantine(item)">
+                    Retry OCR
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+
+  </div>
+  }
+
+  <!-- DUPLICATE WARNING MODAL DIALOG (BRD FR-004 & UAT-03) -->
+  @if (showDuplicateModal && duplicateQueueItem && existingDuplicateDoc) {
+    <div class="modal-backdrop" (click)="closeDuplicateModal()">
+      <div
+        class="modal-dialog duplicate-modal"
+        (click)="$event.stopPropagation()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dup-modal-title"
+      >
+        <!-- MODAL HEADER -->
+        <div class="modal-header warning-header">
+          <div>
+            <div class="eyebrow-red">DUPLICATE DETECTED (BRD FR-004)</div>
+            <h3 id="dup-modal-title">Checksum Collision Warning</h3>
+          </div>
+          <button type="button" class="btn-close" (click)="closeDuplicateModal()" aria-label="Close modal">✕</button>
+        </div>
+
+        <!-- MODAL BODY -->
+        <div class="modal-body">
+          <p class="dup-intro-text">
+            An identical file hash or invoice number collision was detected in the organization repository. Review the side-by-side comparison below to decide how to process this document. <strong>Never silently overwrite!</strong>
+          </p>
+
+          <!-- SIDE-BY-SIDE COMPARISON GRID -->
+          <div class="comparison-grid">
+            
+            <!-- NEW UPLOAD CARD -->
+            <div class="comp-card new-card">
+              <div class="comp-card-header">
+                <span class="badge-new">NEW UPLOAD</span>
+                <h4>{{ duplicateQueueItem.name }}</h4>
+              </div>
+              <div class="comp-details">
+                <div><span class="lbl">SHA-256 Hash:</span> <code class="hash-sm">{{ duplicateQueueItem.checksum }}</code></div>
+                <div><span class="lbl">File Size:</span> <strong>{{ duplicateQueueItem.formattedSize }}</strong></div>
+                <div><span class="lbl">Category:</span> <strong>{{ duplicateQueueItem.category }}</strong></div>
+                <div><span class="lbl">Submitter:</span> <strong>{{ duplicateQueueItem.submitter }}</strong></div>
+                <div><span class="lbl">Source:</span> <strong>{{ duplicateQueueItem.source }} Portal</strong></div>
+              </div>
+            </div>
+
+            <!-- EXISTING RECORD CARD -->
+            <div class="comp-card existing-card">
+              <div class="comp-card-header">
+                <span class="badge-existing">EXISTING RECORD</span>
+                <h4>{{ existingDuplicateDoc.name }}</h4>
+              </div>
+              <div class="comp-details">
+                <div><span class="lbl">SHA-256 Hash:</span> <code class="hash-sm">{{ existingDuplicateDoc.checksum }}</code></div>
+                <div><span class="lbl">Document ID:</span> <strong>{{ existingDuplicateDoc.id }} ({{ existingDuplicateDoc.version }})</strong></div>
+                <div><span class="lbl">Owner:</span> <strong>{{ existingDuplicateDoc.owner }}</strong></div>
+                <div><span class="lbl">Uploaded:</span> <strong>{{ existingDuplicateDoc.uploadedAt }}</strong></div>
+                <div><span class="lbl">Extracted Meta:</span> <span class="meta-tag">{{ existingDuplicateDoc.metadata[0] }}</span></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- THREE EXPLICIT USER CHOICES -->
+          <div class="choices-section">
+            <h4>Select Resolution Strategy:</h4>
+            
+            <button type="button" class="choice-option-btn" (click)="resolveDuplicateChoice('keep_both')">
+              <div class="choice-icon">📁</div>
+              <div>
+                <strong>Keep both as separate documents</strong>
+                <span>Creates a new document record with an automatic suffix (e.g. filename_copy.pdf).</span>
+              </div>
+            </button>
+
+            <button type="button" class="choice-option-btn" (click)="resolveDuplicateChoice('new_version')">
+              <div class="choice-icon">🔄</div>
+              <div>
+                <strong>Add as a new version of the existing document</strong>
+                <span>Appends this file as version v2.0 under existing document ID {{ existingDuplicateDoc.id }}.</span>
+              </div>
+            </button>
+
+            <button type="button" class="choice-option-btn cancel-btn" (click)="resolveDuplicateChoice('cancel')">
+              <div class="choice-icon">🚫</div>
+              <div>
+                <strong>Cancel upload</strong>
+                <span>Aborts upload process and discards the new file.</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- MODAL FOOTER (Part A.2) -->
+        <div class="modal-footer">
+          <button type="button" class="secondary-button" (click)="resolveDuplicateChoice('cancel')">Cancel</button>
+          <button type="button" class="primary-button btn-upload-anyway" (click)="uploadAnyway()">Upload anyway</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- TIMELINE MODAL DRAWER -->
+  @if (showTimelineModal && selectedTimelineItem) {
+    <div class="modal-backdrop" (click)="closeTimelineModal()">
+      <div
+        class="modal-dialog timeline-modal"
+        (click)="$event.stopPropagation()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="timeline-modal-title"
+      >
+        <div class="modal-header">
+          <div>
+            <div class="eyebrow">INTAKE LIFECYCLE TIMELINE</div>
+            <h3 id="timeline-modal-title">{{ selectedTimelineItem.name }} ({{ selectedTimelineItem.id }})</h3>
+          </div>
+          <button type="button" class="btn-close" (click)="closeTimelineModal()" aria-label="Close modal">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="timeline-summary-bar">
+            <div><span class="lbl">Category:</span> <strong>{{ selectedTimelineItem.category }}</strong></div>
+            <div><span class="lbl">Source:</span> <strong>{{ selectedTimelineItem.source }}</strong></div>
+            <div><span class="lbl">Status:</span> <span class="status-chip validated">{{ selectedTimelineItem.status }}</span></div>
+          </div>
+
+          <h4 style="margin: 16px 0 12px; font-size: 14px;">BRD Intake Lifecycle Stages</h4>
+          <div class="lifecycle-stepper">
+            <div class="step-box done">
+              <strong class="stitle">1. Received</strong>
+              <span class="sdesc">File ingested & specs validated</span>
+            </div>
+            <div class="step-box" [class.done]="selectedTimelineItem.status === 'Validated' || selectedTimelineItem.status === 'Quarantined'">
+              <strong class="stitle">2. Validated / Quarantined</strong>
+              <span class="sdesc">SHA-256 computed & malware scanned</span>
+            </div>
+            <div class="step-box" [class.done]="selectedTimelineItem.status === 'Validated'">
+              <strong class="stitle">3. Processing</strong>
+              <span class="sdesc">OCR LayoutLMv3 text extraction</span>
+            </div>
+            <div class="step-box" [class.done]="selectedTimelineItem.status === 'Validated'">
+              <strong class="stitle">4. Review</strong>
+              <span class="sdesc">Routed to HITL Workbench</span>
+            </div>
+          </div>
+
+          <h4 style="margin: 20px 0 12px; font-size: 14px;">Attempt Log & Event History</h4>
+          <div class="attempt-history-list">
+            @for (attempt of selectedTimelineItem.attemptHistory; track attempt.attemptNumber) {
+              <div class="attempt-log-row">
+                <span class="att-num">#{{ attempt.attemptNumber }}</span>
+                <div class="att-info">
+                  <strong>{{ attempt.stage }} — {{ attempt.status }}</strong>
+                  <p>{{ attempt.note }}</p>
+                </div>
+                <span class="att-time">{{ attempt.timestamp }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="secondary-button" (click)="closeTimelineModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

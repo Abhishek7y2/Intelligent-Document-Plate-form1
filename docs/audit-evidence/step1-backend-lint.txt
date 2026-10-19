@@ -1,0 +1,65 @@
+$ npm run lint
+
+> docunexa-backend@1.0.0 lint
+> eslint src
+
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\controllers\admin.controller.ts
+  5:10  warning  'OutboxService' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  6:10  warning  'IntakeService' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\controllers\qa.controller.ts
+  141:12  warning  '_err' is defined but never used  @typescript-eslint/no-unused-vars
+  180:12  warning  '_err' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\middleware\auth.middleware.spec.ts
+    1:10  warning  'Request' is defined but never used. Allowed unused vars must match /^_/u            @typescript-eslint/no-unused-vars
+  139:11  warning  'jsonBody' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\services\auth.service.spec.ts
+  121:65  warning  'params' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\services\auth.service.ts
+   13:3   warning  'MfaRequiredResult' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  156:14  warning  'dbErr' is defined but never used                                                    @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\services\gemini-ocr.adapter.ts
+   4:3   warning  'OcrPageResult' is defined but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+   5:3   warning  'OcrLineToken' is defined but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+   6:3   warning  'OcrWordToken' is defined but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+  10:10  warning  'bboxToPolygon' is defined but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+  34:73  warning  'maxPages' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\services\idempotency.service.ts
+  3:10  warning  'Logger' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\services\intake.service.ts
+     3:26  warning  'MockMalwareScanner' is defined but never used. Allowed unused vars must match /^_/u    @typescript-eslint/no-unused-vars
+     4:32  warning  'MemoryStorageService' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  1042:19  warning  'key' is assigned a value but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+  1051:19  warning  'key' is assigned a value but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\services\mongo-summaries-email.spec.ts
+   18:3  warning  'MAX_TOTAL_ATTACHMENT_BYTES' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  439:9  warning  'mailboxId' is assigned a value but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\services\rbac-verification.spec.ts
+   3:3   warning  'requireRole' is defined but never used. Allowed unused vars must match /^_/u        @typescript-eslint/no-unused-vars
+   9:38  warning  'Permission' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+  10:27  warning  'SodViolationError' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\services\scanner.service.ts
+  111:27  warning  'err' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\services\schema.service.ts
+  442:5   warning  'userId' is defined but never used. Allowed unused args must match /^_/u        @typescript-eslint/no-unused-vars
+  585:19  warning  'key' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\services\sprint8-uat-resilience.spec.ts
+  63:9  warning  'activeSessionId' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Mobiloitte\3D Objects\document_intelligence_platform-main\document_intelligence_platform-main\backend\src\services\storage-malware-retention.spec.ts
+  8:3  warning  'ObjectStorageService' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+✖ 29 problems (0 errors, 29 warnings)
+Exit code: 0

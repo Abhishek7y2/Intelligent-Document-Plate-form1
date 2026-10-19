@@ -1,0 +1,57 @@
+{
+  "profile": "spike",
+  "description": "Sudden spike of 60 VUs with rapid 1s ramp-up to evaluate surge handling and queue draining",
+  "concurrency": 60,
+  "durationSeconds": 15.1,
+  "totalRequests": 3054,
+  "successfulRequests": 3054,
+  "errorCount": 0,
+  "errorRate": 0,
+  "throughputRps": 201.9,
+  "statusCodes": {
+    "200": 3054
+  },
+  "overallLatencies": {
+    "count": 3054,
+    "min": 2.8,
+    "max": 725.83,
+    "mean": 234.59,
+    "p50": 188.12,
+    "p90": 415.14,
+    "p95": 494.55,
+    "p99": 584.42
+  },
+  "transactionBreakdown": {
+    "GET /search (Metadata & Text)": {
+      "count": 1035,
+      "min": 3.46,
+      "max": 609.29,
+      "mean": 234,
+      "p50": 188.52,
+      "p90": 409.25,
+      "p95": 491.85,
+      "p99": 585.42
+    },
+    "GET /documents/:id": {
+      "count": 1020,
+      "min": 2.8,
+      "max": 725.83,
+      "mean": 230.09,
+      "p50": 183.43,
+      "p90": 413.16,
+      "p95": 494.55,
+      "p99": 581.99
+    },
+    "GET /compare?doc1=DOC-10245&doc2=v2": {
+      "count": 999,
+      "min": 3.55,
+      "max": 700.17,
+      "mean": 239.79,
+      "p50": 195.64,
+      "p90": 421.56,
+      "p95": 497.21,
+      "p99": 589.17
+    }
+  },
+  "timestamp": "2026-10-14T05:07:46.234Z"
+}

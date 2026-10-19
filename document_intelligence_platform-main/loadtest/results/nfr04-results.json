@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-10-15T13:23:18.869Z",
+  "benchmarkName": "NFR-04 20-Page PDF Throughput & Latency Benchmark",
+  "parameters": {
+    "totalDocuments": 50,
+    "pagesPerDocument": 20,
+    "totalPagesProcessed": 1000,
+    "timeoutWindowSeconds": 300,
+    "concurrencyLimit": 5
+  },
+  "metrics": {
+    "totalSubmitted": 50,
+    "totalProcessedWithinDeadline": 50,
+    "percentageProcessed": 100,
+    "targetPercentage": 95,
+    "targetMet": true,
+    "elapsedSeconds": 596,
+    "latencyStatsMs": {
+      "min": 46105,
+      "p50": 59943,
+      "p95": 69576,
+      "p99": 70574,
+      "max": 70574,
+      "average": 58847
+    }
+  },
+  "systemEnvironment": {
+    "cpuModel": "Intel(R) Core(TM) i5-2400 CPU @ 3.10GHz",
+    "cpuCores": 4,
+    "totalMemoryGB": "7.90",
+    "freeMemoryGB": "0.97",
+    "osPlatform": "win32",
+    "osRelease": "10.0.19045",
+    "nodeVersion": "v22.15.0",
+    "databaseVersion": "PostgreSQL 16.3 (Debian 16.3-1.pgdg120+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit"
+  }
+}

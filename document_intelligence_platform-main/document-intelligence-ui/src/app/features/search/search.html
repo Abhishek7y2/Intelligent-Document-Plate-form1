@@ -1,0 +1,228 @@
+<div class="search-page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">DISCOVERY & RECOVERY</span>
+      <h1>Full-Text & Metadata Search</h1>
+      <p>Permission-aware discovery across OCR text, extracted metadata, and multi-tenant repositories.</p>
+    </div>
+
+    <!-- SAVED SEARCHES BUTTON (TASK 7A Item 1) -->
+    <button type="button" class="btn-saved-searches" (click)="isSavedSearchDrawerOpen = true">
+      <span>💾 Saved Searches</span>
+      <span class="badge">{{ savedSearches.length }}</span>
+    </button>
+  </div>
+
+  <!-- SEARCH INPUT & MAIN BAR -->
+  <section class="search-bar-card">
+    <div class="search-input-wrapper">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Search keywords, invoice numbers, clauses, or parties..."
+        [(ngModel)]="searchTerm"
+        (keyup.enter)="search()"
+      />
+      @if (searchTerm) {
+        <button type="button" class="btn-clear-term" (click)="searchTerm = ''; search()">×</button>
+      }
+      <button type="button" class="btn-search-primary" (click)="search()">Search</button>
+    </div>
+
+    <!-- ADVANCED FILTERS ROW (BRD 4.4 - TASK 7A Item 2) -->
+    <div class="advanced-filters-grid">
+      <div class="filter-group">
+        <label>Doc Type:</label>
+        <select [(ngModel)]="selectedType" (change)="search()">
+          <option>All Types</option>
+          <option>Supplier Contract</option>
+          <option>Purchase Invoice</option>
+          <option>Internal Policy</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Lifecycle Status:</label>
+        <select [(ngModel)]="selectedStatus" (change)="search()">
+          <option>All Status</option>
+          <option>Approved/Published</option>
+          <option>Review</option>
+          <option>Pending approval</option>
+          <option>Quarantined</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Supplier / Party:</label>
+        <input type="text" [(ngModel)]="supplierQuery" placeholder="e.g. Apex Industrial" (input)="search()" class="filter-input" />
+      </div>
+
+      <div class="filter-group">
+        <label>Date Range:</label>
+        <div class="date-inputs">
+          <input type="date" [(ngModel)]="startDate" (change)="search()" class="filter-date" />
+          <span>to</span>
+          <input type="date" [(ngModel)]="endDate" (change)="search()" class="filter-date" />
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Amount Range (₹):</label>
+        <div class="amount-inputs">
+          <input type="number" [(ngModel)]="minAmount" placeholder="Min" (input)="search()" class="filter-num" />
+          <span>-</span>
+          <input type="number" [(ngModel)]="maxAmount" placeholder="Max" (input)="search()" class="filter-num" />
+        </div>
+      </div>
+    </div>
+
+    <!-- TAG CHIPS MULTI-SELECT -->
+    <div class="tags-filter-bar">
+      <span class="tags-label">Filter Tags:</span>
+      @for (tag of availableTags; track tag) {
+        <button
+          type="button"
+          class="tag-chip"
+          [class.active]="selectedTags.includes(tag)"
+          (click)="toggleTag(tag)"
+        >
+          {{ selectedTags.includes(tag) ? '✓ ' : '+ ' }}{{ tag }}
+        </button>
+      }
+    </div>
+
+    <!-- ACTIVE FILTERS BAR & SAVE SEARCH TRIGGER -->
+    @if (activeFiltersCount > 0 || searchTerm) {
+      <div class="active-filters-bar">
+        <div class="chips-list">
+          <span class="lbl">Active Filters:</span>
+          @if (searchTerm) { <span class="active-chip">Query: "{{ searchTerm }}"</span> }
+          @if (selectedType !== 'All Types') { <span class="active-chip">Type: {{ selectedType }}</span> }
+          @if (selectedStatus !== 'All Status') { <span class="active-chip">Status: {{ selectedStatus }}</span> }
+          @if (supplierQuery) { <span class="active-chip">Party: {{ supplierQuery }}</span> }
+          @if (minAmount || maxAmount) { <span class="active-chip">Amount: ₹{{ minAmount || 0 }} - {{ maxAmount ? '₹' + maxAmount : '∞' }}</span> }
+          @for (t of selectedTags; track t) { <span class="active-chip">Tag: {{ t }}</span> }
+        </div>
+
+        <div class="bar-actions">
+          <button type="button" class="btn-save-query" (click)="openSaveSearchModal()">
+            💾 Save Current Search
+          </button>
+          <button type="button" class="btn-clear-all" (click)="clearSearch()">
+            Clear All
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- RESULTS SECTION -->
+  @if (isLoading()) {
+    <app-loading-state layout="cards" message="Executing permission-aware discovery search..."></app-loading-state>
+  } @else if (hasError()) {
+    <app-error-state (retry)="retryLoad()"></app-error-state>
+  } @else {
+    <section class="results-section">
+      <div class="results-header">
+        <h2>Search Results ({{ filteredDocuments.length }})</h2>
+        <span class="sub">Permission-filtered output based on current user role</span>
+      </div>
+
+      <div class="results-list">
+        @for (doc of filteredDocuments; track doc.id) {
+          <div class="search-result-card" [class.restricted-card]="doc.isRestricted">
+            <div class="res-top">
+              <div class="doc-info">
+                <span class="doc-icon">📄</span>
+                <div>
+                  <a [routerLink]="['/documents', doc.id]" class="doc-title-link">{{ doc.name }}</a>
+                  <div class="doc-meta">
+                    <span>{{ doc.id }}</span> · <span>{{ doc.pages }} pages</span> · <span>Updated: {{ doc.updatedAt }}</span> · <span>Party: {{ doc.supplier }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="res-right">
+                <!-- SHARED STATUS BADGE COMPONENT -->
+                <app-status-badge [status]="doc.status"></app-status-badge>
+                <span class="score-badge">{{ doc.confidence }}% Match</span>
+              </div>
+            </div>
+
+            <!-- SNIPPET WITH MASKING SAFE FALLBACK (TASK 7A Item 3) -->
+            <div class="snippet-box" [class.masked]="doc.isRestricted">
+              <span class="span-cite">📍 Citation: {{ doc.pageSpan }}</span>
+              @if (doc.isRestricted) {
+                <div class="restricted-mask-alert">
+                  <span class="lock-icon">🔒</span>
+                  <span>{{ doc.snippet }}</span>
+                </div>
+              } @else {
+                <p class="snippet-text">"...{{ doc.snippet }}..."</p>
+              }
+            </div>
+
+            <div class="res-tags">
+              @for (tag of doc.tags; track tag) {
+                <span class="res-tag">{{ tag }}</span>
+              }
+            </div>
+          </div>
+        }
+
+        @if (filteredDocuments.length === 0) {
+          <app-empty-state
+            variant="search"
+            title="No matching search results"
+            message="No documents matched your specific filter criteria. Try broadening your query or clearing active filters."
+            actionLabel="Clear Filters"
+            (action)="clearSearch()"
+          ></app-empty-state>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- SAVED SEARCHES FLYOUT DRAWER (TASK 7A Item 1) -->
+  @if (isSavedSearchDrawerOpen) {
+    <div class="drawer-backdrop" (click)="isSavedSearchDrawerOpen = false"></div>
+    <aside class="saved-searches-drawer" role="dialog">
+      <div class="drawer-header">
+        <h3>💾 Saved Searches & Queries</h3>
+        <button type="button" class="btn-close-drawer" (click)="isSavedSearchDrawerOpen = false">×</button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- SAVE CURRENT FORM -->
+        <div class="save-form-box">
+          <label>Save Current Active Filter Configuration:</label>
+          <input type="text" [(ngModel)]="savedSearchName" placeholder="Saved search name..." class="drawer-input" />
+          <button type="button" class="btn-confirm-save" (click)="saveCurrentSearch()">+ Save Search</button>
+        </div>
+
+        <div class="saved-list">
+          <span class="list-title">Your Saved Search Presets:</span>
+          @for (s of savedSearches; track s.id) {
+            <div class="saved-item-card" [class.default-item]="s.isDefault">
+              <div class="s-top">
+                <strong>{{ s.name }}</strong>
+                @if (s.isDefault) { <span class="def-badge">★ Default</span> }
+              </div>
+              <p class="s-query">Query: "{{ s.query || 'All' }}" · Type: {{ s.type }}</p>
+
+              <div class="s-actions">
+                <button type="button" class="btn-run-search" (click)="runSavedSearch(s)">▶ Run Search</button>
+                <button type="button" class="btn-set-default" (click)="setAsDefaultSearch(s)">★ Set Default</button>
+                <button type="button" class="btn-del-saved" (click)="deleteSavedSearch(s.id)">✕ Delete</button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </aside>
+  }
+
+  @if (toastMessage) {
+    <div class="toast-popup success"><span>{{ toastMessage }}</span></div>
+  }
+</div>

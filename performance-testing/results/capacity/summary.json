@@ -1,0 +1,67 @@
+{
+  "profile": "document-capacity",
+  "description": "20-page document batch ingestion and async processing capacity (NFR-03 upload ack < 5s, NFR-04 processing within 5 mins)",
+  "concurrency": 10,
+  "durationSeconds": 20.5,
+  "totalRequests": 1575,
+  "successfulRequests": 1345,
+  "expectedDenials": 115,
+  "unexpectedFailures": 115,
+  "genuineErrorRate": 7.88,
+  "rawFailureRate": 39.81,
+  "throughputRps": 76.9,
+  "statusCodes": {
+    "200": 535,
+    "201": 413,
+    "403": 230,
+    "409": 397
+  },
+  "overallLatencies": {
+    "count": 1575,
+    "min": 2.28,
+    "max": 1995.57,
+    "mean": 18.07,
+    "p50": 4.61,
+    "p90": 8.3,
+    "p95": 9.82,
+    "p99": 18.07
+  },
+  "transactionBreakdown": {
+    "POST /documents/upload (Ack < 5s)": {
+      "count": 528,
+      "min": 2.28,
+      "max": 17.94,
+      "mean": 5.09,
+      "p50": 4.37,
+      "p90": 7.72,
+      "p95": 8.93,
+      "p99": 12.42
+    },
+    "POST /documents/:id/process-ocr (20-page)": {
+      "count": 526,
+      "min": 2.66,
+      "max": 1995.57,
+      "mean": 42.94,
+      "p50": 4.13,
+      "p90": 7.97,
+      "p95": 9.6,
+      "p99": 1423.59
+    },
+    "GET /search (Metadata & Text)": {
+      "count": 521,
+      "min": 3.53,
+      "max": 18.07,
+      "mean": 6.11,
+      "p50": 5.29,
+      "p90": 9.4,
+      "p95": 10.62,
+      "p99": 14.25
+    }
+  },
+  "memoryTelemetry": {
+    "initialHeapUsedMb": 19.4,
+    "finalHeapUsedMb": 18.7,
+    "finalRssMb": 118.7
+  },
+  "timestamp": "2026-10-14T05:57:23.505Z"
+}

@@ -1,0 +1,512 @@
+<div class="approvals-page">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">WORKFLOW GOVERNANCE</span>
+      <h1>Approvals Engine</h1>
+      <p>Multi-tier approval pipeline, separation of duties compliance, and audit sign-off controls.</p>
+    </div>
+
+    <!-- VIEW TOGGLE TABS (TASK 6 Item 9) -->
+    <div class="view-toggle-bar">
+      <button 
+        type="button" 
+        class="vtab" 
+        [class.active]="activeView === 'queue'" 
+        (click)="activeView = 'queue'"
+      >
+        <span>📋 Pending Approvals</span>
+        <span class="count-badge">{{ pendingCount }}</span>
+      </button>
+      <button 
+        type="button" 
+        class="vtab" 
+        [class.active]="activeView === 'audit'" 
+        (click)="activeView = 'audit'"
+      >
+        <span>📜 Approval Audit Log</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- STATS CARDS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon pending">!</div>
+      <div>
+        <span>Pending Approval</span>
+        <strong>{{ pendingCount }}</strong>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon priority">↑</div>
+      <div>
+        <span>High Priority</span>
+        <strong>{{ highPriorityCount }}</strong>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon value">₹</div>
+      <div>
+        <span>Pending Value</span>
+        <strong>{{ formattedTotalValue }}</strong>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon approved">✓</div>
+      <div>
+        <span>Approved Records</span>
+        <strong>{{ approvedCount }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUEUE VIEW -->
+  @if (activeView === 'queue') {
+    <!-- FILTERS BAR -->
+    <section class="filter-card">
+      <div class="search-box">
+        <span>⌕</span>
+        <input
+          type="text"
+          placeholder="Search documents, IDs, uploaders or reviewers..."
+          [(ngModel)]="searchTerm"
+        />
+      </div>
+
+      <select [(ngModel)]="selectedType">
+        <option>All Types</option>
+        <option>Supplier Contract</option>
+        <option>Purchase Invoice</option>
+        <option>Internal Policy</option>
+      </select>
+
+      <select [(ngModel)]="selectedPriority">
+        <option>All Priority</option>
+        <option>High</option>
+        <option>Medium</option>
+        <option>Low</option>
+      </select>
+
+      <select [(ngModel)]="selectedStatus">
+        <option>All Status</option>
+        <option>Pending Approval</option>
+        <option>In Approval</option>
+        <option>Approved</option>
+        <option>Rejected</option>
+      </select>
+
+      <button type="button" class="clear-button" (click)="clearFilters()">Clear</button>
+    </section>
+
+    <!-- APPROVAL QUEUE CONTENT -->
+    @if (isLoading()) {
+      <app-loading-state layout="cards" message="Loading workflow approvals queue..."></app-loading-state>
+    } @else if (hasError()) {
+      <app-error-state
+        title="Unable to load approval queue"
+        message="We encountered an issue fetching documents awaiting approval sign-off."
+        (retry)="retryLoad()"
+      ></app-error-state>
+    } @else {
+      <section class="queue-card">
+        <div class="queue-header">
+          <div>
+            <span class="eyebrow">WORKFLOW QUEUE</span>
+            <h2>Active Approval Items ({{ filteredDocuments.length }})</h2>
+          </div>
+          <span class="queue-count">{{ filteredDocuments.length }} documents</span>
+        </div>
+
+        <div class="documents-cards-list">
+          @for (doc of filteredDocuments; track doc.id) {
+            <div class="doc-approval-card" [class.sod-flagged]="isSodBlocked(doc)">
+              
+              <!-- TOP DOC BAR -->
+              <div class="card-top-bar">
+                <div class="doc-identity-box">
+                  <span class="file-tag">{{ doc.type === 'Purchase Invoice' ? 'INV' : 'DOC' }}</span>
+                  <div>
+                    <div class="title-row">
+                      <a [routerLink]="['/documents', doc.id]" class="doc-title-link">{{ doc.name }}</a>
+                      <span class="status-badge {{ doc.status.toLowerCase().replace(' ', '-') }}">{{ doc.status }}</span>
+                      <span class="priority-badge {{ doc.priority.toLowerCase() }}">{{ doc.priority }} Priority</span>
+                    </div>
+                    <div class="doc-sub-info">
+                      <span>{{ doc.id }}</span> · <span>{{ doc.pages }} pages</span> · <span>Submitted by <strong>{{ doc.submittedBy }}</strong></span> · <span>Reviewed by <strong>{{ doc.reviewedBy }}</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="doc-value-box">
+                  <span class="lbl">Document Value</span>
+                  <strong class="val">{{ doc.documentValue }}</strong>
+                </div>
+              </div>
+
+              <!-- DATA-DRIVEN WORKFLOW PIPELINE & PARALLEL QUORUM VISUALIZATION (TASK 6 Item 1 & 2) -->
+              <div class="pipeline-section">
+                <div class="pipeline-meta">
+                  <span class="rule-applied">
+                    ⚡ <strong>Rule Applied:</strong> {{ doc.workflowConfig.appliedRuleDescription }}
+                  </span>
+                  <span class="policy-ver">Policy {{ doc.workflowConfig.policyVersion }}</span>
+                </div>
+
+                <div class="stepper-pipeline">
+                  @for (step of doc.workflowConfig.steps; track step.id; let idx = $index) {
+                    <div class="step-node {{ step.status }}" [class.parallel]="step.type === 'parallel'">
+                      <div class="node-circle">
+                        @if (step.status === 'completed') { ✓ }
+                        @else if (step.status === 'active') { ● }
+                        @else { {{ idx + 1 }} }
+                      </div>
+
+                      <div class="node-text">
+                        <strong>{{ step.name }}</strong>
+                        @if (step.type === 'parallel' && step.quorumRequired) {
+                          <!-- PARALLEL QUORUM PROGRESS BADGE (TASK 6 Item 2) -->
+                          <div class="quorum-badge">
+                            <span class="ring-label">
+                              Quorum: {{ getQuorumProgress(step).approvedCount }} of {{ step.quorumRequired }} required
+                            </span>
+                            <div class="quorum-bar">
+                              <div class="fill" [style.width.%]="getQuorumProgress(step).percent"></div>
+                            </div>
+                          </div>
+                        }
+
+                        <!-- APPROVERS INDIVIDUAL STATUS BADGES -->
+                        <div class="approvers-mini-list">
+                          @for (m of step.approvers; track m.id) {
+                            <span class="app-chip {{ m.status.toLowerCase() }}" [title]="m.name + ': ' + m.status + (m.timestamp ? ' at ' + m.timestamp : '')">
+                              {{ m.avatar }} {{ m.name.split(' ')[0] }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+                    </div>
+
+                    @if (idx < doc.workflowConfig.steps.length - 1) {
+                      <div class="connector {{ step.status === 'completed' ? 'completed' : (step.status === 'active' ? 'active' : '') }}"></div>
+                    }
+                  }
+                </div>
+              </div>
+
+              <!-- APPROVAL GATE PANEL & SOD WARNING (TASK 6 Item 4 & 8) -->
+              <div class="gate-and-sod-bar">
+
+                <!-- APPROVAL GATE CHECKLIST -->
+                <div class="gate-checklist-box" [class.blocked]="isGateBlocked(doc)">
+                  <span class="gate-title">Approval Gate Checklist:</span>
+                  <div class="checklist-items">
+                    <span class="check-item" [class.pass]="doc.gate.allRequiredFieldsComplete">
+                      {{ doc.gate.allRequiredFieldsComplete ? '✓' : '✕' }} Required Fields
+                    </span>
+                    <span class="check-item" [class.pass]="doc.gate.blockingExceptionsResolved">
+                      {{ doc.gate.blockingExceptionsResolved ? '✓' : '✕' }} Exceptions Resolved
+                    </span>
+                    <span class="check-item" [class.pass]="doc.gate.sourceVersionCurrent">
+                      {{ doc.gate.sourceVersionCurrent ? '✓' : '✕' }} Source Version {{ doc.sourceVersion }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- SOD WARNING BADGE -->
+                @if (isSodBlocked(doc)) {
+                  <div class="sod-warning-alert">
+                    <span class="icon">🛡️</span>
+                    <div>
+                      <strong>Separation of Duties (SoD) Active</strong>
+                      <p>{{ getSodBlockReason(doc) }}</p>
+                    </div>
+                    <button type="button" class="btn-reassign" (click)="openReassignModal(doc)">
+                      Reassign Task
+                    </button>
+                  </div>
+                }
+
+                <!-- SIDE-BY-SIDE VERSIONS & COMPARE STUDIO LINK (TASK 6 Item 6) -->
+                <div class="versions-summary-box">
+                  <span class="ver-label">Source Version: <strong>{{ doc.sourceVersion }}</strong></span>
+                  @if (doc.previousVersionId) {
+                    <button type="button" class="btn-compare-link" (click)="navigateToCompareStudio(doc)">
+                      🔍 Compare in Compare Studio
+                    </button>
+                  }
+                </div>
+
+                <!-- EXCEPTIONS DRAWER TRIGGER (TASK 6 Item 5) -->
+                @if (doc.exceptions && doc.exceptions.length > 0) {
+                  <button type="button" class="btn-view-exceptions" (click)="openExceptionsDrawer(doc)">
+                    ⚠️ Blocking Exceptions ({{ doc.exceptions.length }})
+                  </button>
+                }
+
+              </div>
+
+              <!-- CARD ACTIONS -->
+              <div class="card-footer-actions">
+                @if (doc.status === 'Pending Approval' || doc.status === 'In Approval') {
+                  <div class="action-buttons-group">
+                    <button 
+                      type="button" 
+                      class="btn-approve" 
+                      [disabled]="isSodBlocked(doc) || isGateBlocked(doc)"
+                      [title]="isSodBlocked(doc) ? getSodBlockReason(doc) : (isGateBlocked(doc) ? getGateBlockReason(doc) : 'Approve Document')"
+                      (click)="openActionPanel(doc, 'Approve')"
+                    >
+                      ✓ Approve
+                    </button>
+
+                    <button 
+                      type="button" 
+                      class="btn-return" 
+                      (click)="openActionPanel(doc, 'Return for Changes')"
+                    >
+                      ↩ Return for Changes
+                    </button>
+
+                    <button 
+                      type="button" 
+                      class="btn-reject" 
+                      (click)="openActionPanel(doc, 'Reject')"
+                    >
+                      ✕ Reject
+                    </button>
+                  </div>
+                } @else {
+                  <span class="status-completed-label">✓ Decision Logged: {{ doc.status }}</span>
+                }
+              </div>
+
+            </div>
+          }
+
+          @if (filteredDocuments.length === 0) {
+            <app-empty-state
+              variant="queue"
+              title="Approval queue is empty"
+              message="Great job! All pending approval requests have been processed."
+              actionLabel="Clear Filters"
+              (action)="clearFilters()"
+            ></app-empty-state>
+          }
+        </div>
+      </section>
+    }
+  }
+
+  <!-- AUDIT TAB VIEW (TASK 6 Item 9) -->
+  @if (activeView === 'audit') {
+    <section class="audit-records-card">
+      <div class="audit-card-header">
+        <div>
+          <span class="eyebrow">COMPLIANCE AUDIT TRAIL</span>
+          <h2>Filterable Approval History Log</h2>
+        </div>
+        <button type="button" class="btn-export-audit" (click)="exportAuditLog()">
+          📥 Export Audit Log (CSV)
+        </button>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>DATE & TIME</th>
+              <th>ACTOR / ROLE</th>
+              <th>DECISION</th>
+              <th>DOCUMENT TITLE</th>
+              <th>POLICY VERSION</th>
+              <th>REASON CODE / REASON NOTES</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (rec of auditRecords; track rec.id) {
+              <tr>
+                <td class="date-cell">{{ rec.date }}</td>
+                <td>
+                  <strong>{{ rec.actor }}</strong>
+                  <span class="sub-role">{{ rec.role }}</span>
+                </td>
+                <td>
+                  <span class="decision-chip {{ rec.decision.toLowerCase().replace(' ', '-') }}">
+                    {{ rec.decision }}
+                  </span>
+                </td>
+                <td>
+                  <span class="doc-link-name">{{ rec.documentTitle }}</span>
+                  <span class="doc-id-tag">{{ rec.documentId }}</span>
+                </td>
+                <td>
+                  <span class="policy-chip">{{ rec.policyVersion }}</span>
+                </td>
+                <td class="reason-cell">
+                  {{ rec.reason }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- DECISION FORM MODAL (TASK 6 Item 7) -->
+  @if (showActionPanel && selectedDocument) {
+    <div class="modal-backdrop" (click)="closeActionPanel()">
+      <div class="decision-modal-card" (click)="$event.stopPropagation()">
+        
+        <div class="modal-header">
+          <div>
+            <span class="eyebrow">FINAL COMPLIANCE SIGN-OFF</span>
+            <h2>Sign Decision: {{ actionType }}</h2>
+          </div>
+          <button type="button" class="close-button" (click)="closeActionPanel()">×</button>
+        </div>
+
+        <div class="modal-doc-summary">
+          <span class="file-icon">PDF</span>
+          <div>
+            <strong>{{ selectedDocument.name }}</strong>
+            <span>{{ selectedDocument.id }} · {{ selectedDocument.type }} · Value: {{ selectedDocument.documentValue }}</span>
+          </div>
+        </div>
+
+        <!-- DECISION FORM BODY -->
+        <div class="decision-form-body">
+          <div class="form-group">
+            <label>Compliance Reason Code <span>*</span></label>
+            <select [(ngModel)]="selectedReasonCode" class="modal-select">
+              @if (actionType === 'Approve') {
+                @for (r of approveReasons; track r) {
+                  <option [value]="r">{{ r }}</option>
+                }
+              } @else if (actionType === 'Reject') {
+                @for (r of rejectReasons; track r) {
+                  <option [value]="r">{{ r }}</option>
+                }
+              } @else if (actionType === 'Return for Changes') {
+                @for (r of returnReasons; track r) {
+                  <option [value]="r">{{ r }}</option>
+                }
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Mandatory Sign-off Notes / Remediation Instructions <span>{{ actionType !== 'Approve' ? '*' : '' }}</span></label>
+            <textarea
+              [(ngModel)]="actionComment"
+              rows="3"
+              placeholder="Enter detailed compliance notes for the audit trail..."
+              class="modal-textarea"
+            ></textarea>
+          </div>
+
+          <!-- IMMUTABLE DECISION HISTORY (TASK 6 Item 7) -->
+          <div class="immutable-history-section">
+            <h4>Immutable Decision History (Read-Only)</h4>
+            <div class="history-list-box">
+              @for (entry of selectedDocument.decisionHistory; track entry.id) {
+                <div class="history-entry-item">
+                  <div class="entry-top">
+                    <strong>{{ entry.action }} by {{ entry.actor }}</strong>
+                    <span class="entry-time">{{ entry.timestamp }}</span>
+                  </div>
+                  <p class="entry-reason">Reason: {{ entry.reasonCode }} - "{{ entry.comment }}"</p>
+                  <div class="entry-meta">
+                    <span>Policy: {{ entry.policyVersion }}</span> · <span>Source: {{ entry.sourceVersion }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeActionPanel()">Cancel</button>
+          <button 
+            type="button" 
+            class="btn-primary" 
+            [class.danger]="actionType === 'Reject'"
+            [class.warning]="actionType === 'Return for Changes'"
+            [disabled]="(actionType === 'Reject' || actionType === 'Return for Changes') && !actionComment.trim()"
+            (click)="confirmAction()"
+          >
+            Confirm & Sign {{ actionType }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- REASSIGN MODAL (TASK 6 Item 8) -->
+  @if (showReassignModal && selectedDocument) {
+    <div class="modal-backdrop" (click)="showReassignModal = false">
+      <div class="reassign-modal-card" (click)="$event.stopPropagation()">
+        <h3>🔄 Reassign Approval Task</h3>
+        <p>Reassigning <strong>{{ selectedDocument.id }}</strong> to another authorized approver to satisfy Separation of Duties (SoD).</p>
+
+        <div class="form-group">
+          <label>Select Target Approver:</label>
+          <select [(ngModel)]="selectedReassignTarget" class="modal-select">
+            @for (target of availableReassignTargets; track target.name) {
+              <option [value]="target.name + ' (' + target.role + ')'">{{ target.name }} — {{ target.role }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showReassignModal = false">Cancel</button>
+          <button type="button" class="btn-primary" (click)="confirmReassign()">Confirm Reassignment</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- BLOCKING EXCEPTIONS DRAWER (TASK 6 Item 5) -->
+  @if (isExceptionsDrawerOpen) {
+    <div class="drawer-backdrop" (click)="isExceptionsDrawerOpen = false"></div>
+    <aside class="exceptions-drawer" role="dialog">
+      <div class="drawer-header">
+        <h3>⚠️ Blocking Exceptions for {{ drawerDocId }}</h3>
+        <button type="button" class="btn-close-drawer" (click)="isExceptionsDrawerOpen = false">×</button>
+      </div>
+
+      <div class="drawer-body">
+        @for (exc of drawerExceptions; track exc.id) {
+          <div class="exception-drawer-card" [class.resolved]="exc.isResolved">
+            <div class="exc-title-row">
+              <strong>{{ exc.title }}</strong>
+              <span class="status-tag">{{ exc.isResolved ? '✓ Resolved' : '🚫 Blocking' }}</span>
+            </div>
+            <p>{{ exc.description }}</p>
+            <button 
+              type="button" 
+              class="btn-deep-link" 
+              (click)="navigateToWorkbenchField(drawerDocId, exc.fieldKey)"
+            >
+              ➔ Open Field in Review Workbench
+            </button>
+          </div>
+        }
+      </div>
+    </aside>
+  }
+
+  <!-- TOAST POPUP -->
+  @if (toastMessage) {
+    <div class="toast-popup" [class]="toastType">
+      <span>{{ toastMessage }}</span>
+    </div>
+  }
+
+</div>

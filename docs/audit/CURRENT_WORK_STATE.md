@@ -1,0 +1,190 @@
+# CURRENT WORK STATE — DOCUNEXA AUDIT & FLUTTER APPLICATION DEVELOPMENT
+
+- **Current Date:** 2026-10-17
+- **Current Phase:** Remediation Phase 1 (Completed) — Angular Frontend Contract & Auth Hardening (PASS)
+- **Active Git Branch:** `mobile-frontend`
+- **Execution Mode:** Phased Enterprise Remediation Execution (`DOCUNEXA_REMEDIATION_ROADMAP.md`)
+
+---
+
+## 1. Completed Tasks (Sprint 0A through 0D)
+- [x] Verified Git repository root (`document_intelligence_platform-main`) and nested application directory topology.
+- [x] Switched to dedicated development branch: `mobile-frontend`.
+- [x] Resolved module count discrepancies: Exactly 27 controllers, 44 services, 5 middleware, 19 models, 34 migration SQL files, and 14 UI feature folders.
+- [x] Audited mobile codebase: Verified zero native iOS code (`.swift`, `Podfile`, Xcode) exists in repo.
+- [x] Audited host environment tooling: Verified Flutter and Dart SDKs are not present in PATH.
+- [x] Verified backend API live on `http://localhost:8080/api/v1` (`/health/live` HTTP 200).
+- [x] Verified Angular frontend dev server live on `http://localhost:4200` (HTTP 200).
+- [x] Created `docs/audit/sprints/SPRINT_0A_AUDIT.md` (Sprint Gate: PASS).
+- [x] Inspected all 14 Angular feature modules and 33 screens in `document-intelligence-ui`.
+- [x] Verified frontend test suite execution: 16/16 test files passed, 71/71 tests passed (38.2s).
+- [x] Verified frontend production build: `ng build` completed in 45.5s with 30 static routes prerendered.
+- [x] Authored `docs/audit/PHASE_1_FRONTEND_AUDIT.md`.
+- [x] Authored `docs/audit/FRONTEND_TO_FLUTTER_TRACEABILITY.md`.
+- [x] Authored `docs/audit/sprints/SPRINT_0B_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES).
+- [x] Audited 27 Express controllers, 44 domain services, 19 domain models, 5 middleware handlers.
+- [x] Authored `docs/audit/PHASE_2_BACKEND_AUDIT.md`.
+- [x] Authored `docs/audit/PHASE_2_DATABASE_AUDIT.md`.
+- [x] Authored `docs/audit/PHASE_2_SECURITY_AUDIT.md`.
+- [x] Authored `docs/audit/API_INVENTORY_AND_CONTRACTS.md`.
+- [x] Authored `docs/audit/sprints/SPRINT_0C_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES).
+- [x] Remediated static master OTP backdoors `742918`/`123456` in `email.service.ts` (`DEF-012` / `SEC-001`).
+- [x] Remediated OTP disclosure `testOtp` in `auth.controller.ts` (`DEF-013` / `SEC-002`).
+- [x] Remediated dynamic unauthenticated admin role assignment in `auth.service.ts` (`DEF-014` / `SEC-003`).
+- [x] Remediated persistence degradation via `persistence-initializer.ts` wired to `server.ts` (`DEF-002` / `SEC-010`).
+- [x] Enforced database TLS certificate verification in production in `postgres.client.ts` (`SEC-005`).
+- [x] Secured avatar binary retrieval with `authenticateJwt` and tenant isolation in `api.routes.ts` & `profile.controller.ts` (`SEC-004`).
+- [x] Created automated security hardening regression suite `src/services/security-hardening.spec.ts` (10/10 passed).
+- [x] Verified zero regressions: `profile.service.spec.ts` (21/21 passed) and `npm run build` (0 errors).
+- [x] Authored `docs/audit/SPRINT_0D_REMEDIATION_REPORT.md`.
+- [x] Authored `docs/audit/sprints/SPRINT_0D_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES).
+- [x] Extracted and mapped 23 Functional, 9 AI, 8 NFR, and 12 UAT requirements in `docs/audit/REQUIREMENTS_TRACEABILITY_MATRIX.md`.
+- [x] Traced 10 core end-to-end workflows across layers in `docs/audit/CROSS_APPLICATION_WORKFLOW_MATRIX.md`.
+- [x] Completed mobile feature parity analysis for all 33 views in `docs/audit/FLUTTER_MOBILE_PARITY_GAP_ANALYSIS.md`.
+- [x] Authored comprehensive multi-tier synthesis in `docs/audit/PHASE_3_GAP_ANALYSIS.md`.
+- [x] Authored `docs/audit/sprints/SPRINT_0E_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES).
+- [x] Authored `docs/flutter/FLUTTER_ARCHITECTURE.md` (Feature-first clean architecture, BLoC, DI, GoRouter, Dio).
+- [x] Authored `docs/flutter/FLUTTER_REQUIREMENTS.md` (Functional, non-functional, and platform matrix).
+- [x] Authored `docs/flutter/SCREEN_AND_NAVIGATION_INVENTORY.md` (33 screens, 5 tabs, modal/push routes, BLoC mapping).
+- [x] Authored `docs/flutter/API_INTEGRATION_PLAN.md` (Dio config, queued refresh, correlation IDs, Problem Details).
+- [x] Authored `docs/flutter/FLUTTER_SECURITY_DESIGN.md` (Hardware keystores, biometrics, OWASP MASVS, web flaw elimination).
+- [x] Authored `docs/flutter/FLUTTER_SPRINT_ROADMAP.md` (10-sprint plan from foundation to hardening and release).
+- [x] Authored `docs/flutter/FLUTTER_TEST_STRATEGY.md` (Testing pyramid, BLoC tests, coordinate geometry, SoD).
+- [x] Authored `docs/flutter/FLUTTER_RELEASE_GATES.md` (Gate 1 through Gate 9 quality thresholds and rollback protocols).
+- [x] Authored `docs/audit/sprints/SPRINT_0F_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES; Sprint 0 Overall: PASS_WITH_NONBLOCKING_ISSUES).
+- [x] Scaffolded Flutter application structure under `mobile/` with feature-first Clean Architecture.
+- [x] Authored enterprise design tokens (`AppColors`, `AppSpacing`, `AppRadii`, `AppTypography`, `AppTheme`).
+- [x] Wired dependency injection via `GetIt` (`injection_container.dart`) for environment, logging, storage, and networking.
+- [x] Configured declarative routing via `GoRouter` (`app_router.dart`) with 5-tab persistent bottom bar and modal intake.
+- [x] Built 6 reusable WCAG-compliant UI components (`AppButton`, `AppLoadingIndicator`, `ShimmerLoader`, `ErrorView`, `EmptyStateView`, `AppScaffold`).
+- [x] Implemented environment abstraction (`EnvConfig`) and redacting logger (`AppLogger`).
+- [x] Authored 4 unit and widget test suites in `mobile/test/`.
+- [x] Authored `docs/flutter/SPRINT_1_IMPLEMENTATION_REPORT.md` and `docs/flutter/SPRINT_1_SETUP_AND_VERIFICATION.md`.
+- [x] Authored `docs/audit/sprints/SPRINT_1_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES).
+- [x] Implemented hardware keystore storage (`SecureStorageService`) wrapping `flutter_secure_storage`.
+- [x] Implemented synchronized queued token refresh interceptor (`AuthInterceptor`) in Dio preventing race conditions and loops.
+- [x] Implemented biometric service (`BiometricService`) wrapping `local_auth` with cancellation and fallback.
+- [x] Implemented RFC 7807 Problem Details and typed `ApiException` error mapping.
+- [x] Implemented authentication repository and BLoC with login, OTP, TOTP MFA challenge, invitation acceptance, and password change.
+- [x] Implemented full user profile and session management with active sessions listing and revocation.
+- [x] Updated `app_router.dart` with reactive auth guards and unauthenticated login routes.
+- [x] Authored 7 focused unit, BLoC, and widget test suites in `mobile/test/` for Sprint 2.
+- [x] Completely eliminated web bypasses (`DEF-009`, `DEF-010`, `DEF-012`, `DEF-014`).
+- [x] Authored `docs/flutter/SPRINT_2_IMPLEMENTATION_REPORT.md` and `docs/flutter/SPRINT_2_SETUP_AND_VERIFICATION.md`.
+- [x] Authored `docs/audit/sprints/SPRINT_2_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES).
+- [x] Implemented operations dashboard with 2x2 KPI metrics, pipeline distribution, and `/reports/kpis` fallback aggregation.
+- [x] Implemented document catalog with server-driven pagination, duplicate request concurrency guards, and tab cache protection.
+- [x] Implemented document search, horizontal status chips, docType chips, and sorting modal.
+- [x] Implemented document details view (`/documents/:id`) with SLA status, file metadata, and copyable SHA-256 cryptographic digest.
+- [x] Authored 7 focused unit, BLoC, and widget test suites in `mobile/test/` for Sprint 3.
+- [x] Authored `docs/flutter/SPRINT_3_IMPLEMENTATION_REPORT.md` and `docs/flutter/SPRINT_3_SETUP_AND_VERIFICATION.md`.
+- [x] Authored `docs/audit/sprints/SPRINT_3_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES).
+- [x] Integrated `cunning_document_scanner` for edge camera scanning and `file_picker` for digital files.
+- [x] Implemented pre-upload validation helper (magic bytes, 50MB ceiling, filename sanitization).
+- [x] Implemented streaming multipart upload to canonical `POST /api/v1/documents/upload` with percentage progress tracking.
+- [x] Integrated native server-side idempotency protection with UUID v4 `Idempotency-Key` headers.
+- [x] Implemented duplicate document collision detection (HTTP 409) and force-duplicate resolution.
+- [x] Implemented malware quarantine detection (HTTP 422) and security alerts.
+- [x] Implemented user upload cancellation via `CancelToken`.
+- [x] Enhanced `DocumentDetailScreen` with server-rendered page preview (`/documents/:id/pages/1/image`).
+- [x] Authored 5 focused unit, data source, repo, BLoC, and widget test suites (42 tests) in `mobile/test/features/intake/`.
+- [x] Authored `docs/flutter/SPRINT_4_IMPLEMENTATION_REPORT.md` and `docs/flutter/SPRINT_4_SETUP_AND_VERIFICATION.md`.
+- [x] Authored `docs/audit/sprints/SPRINT_4_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES).
+- [x] Implemented Review Queue entity, models, and remote data source consuming verified `GET /api/v1/review/queue`.
+- [x] Implemented Review Workbench entity, models, and remote data source consuming verified `GET /api/v1/review/:id`.
+- [x] Implemented normalized coordinate geometry scaling ($[0.0, 1.0]$) with dynamic aspect ratio and zoom support via `EvidenceOverlayPainter` and `InteractiveViewer`.
+- [x] Implemented touch-optimized `FieldEditBottomSheet` requiring both corrected value and reason for backend audit trail (`POST /api/v1/review/:id/fields/:key`).
+- [x] Implemented `MathReconciliationCard` displaying `Net + Tax = Total`, discrepancy calculation, and compliance override warnings.
+- [x] Implemented `ReviewDecisionDialog` supporting `APPROVE`, `REJECT`, and `REQUEST_CHANGES` (`POST /api/v1/review/:id/decision`), enforcing override reasons on math discrepancies.
+- [x] Implemented `ReviewQueueBloc` and `ReviewWorkbenchBloc` with comprehensive error handling, quarantine alerts, and optimistic updates.
+- [x] Created `ReviewQueueScreen` and `ReviewWorkbenchScreen` with self-contained DI injection for robust testability.
+- [x] Registered review routes (`/review/:id`) and DI dependencies in `app_router.dart` and `injection_container.dart`.
+- [x] Authored 6 focused unit, data source, BLoC, and widget test suites (24 tests) in `mobile/test/features/review/`.
+- [x] Authored `docs/flutter/SPRINT_5_IMPLEMENTATION_REPORT.md` and `docs/flutter/SPRINT_5_SETUP_AND_VERIFICATION.md`.
+- [x] Authored `docs/audit/sprints/SPRINT_5_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES).
+- [x] Implemented Approval queue entity, models, and remote data source consuming verified `GET /api/v1/approvals/queue`.
+- [x] Implemented Approval details entity, models, and remote data source consuming verified `GET /api/v1/approvals/:id`.
+- [x] Implemented Approval decision handler consuming `POST /api/v1/approvals/:id/decide` supporting `APPROVE`, `REJECT`, `RETURN_FOR_CHANGES` with reason codes.
+- [x] Implemented authoritative server-enforced Separation of Duties (SoD) with typed `SodViolationException` and `SodViolationCard` for submitter, reviewer, and duplicate approver violations.
+- [x] Implemented multi-stage approval quorum tracker (Tier 1 = 1 approval, Tier 2 = 2 approvals, Tier 3 = 2 executive approvals).
+- [x] Implemented enterprise ERP outbound publishing dispatch via `POST /api/v1/erp/publish/:id` and status via `GET /api/v1/erp/status/:id`.
+- [x] Implemented document version history entity, models, and remote data source consuming verified `GET /api/v1/documents/:id/versions`.
+- [x] Implemented Document Version Comparison Studio consuming verified `POST /api/v1/compare` and `GET /api/v1/compare/:id`.
+- [x] Implemented unified word-level text diffs (`DiffChunkViewer`), clause risk analysis (`ClauseDiffCard`), and field diff tables (`FieldDiffTable`).
+- [x] Wired `/approvals/:id`, `/documents/:id/versions`, and `/compare` in `app_router.dart`, and registered all approvals/compare dependencies in `injection_container.dart`.
+- [x] Authored 9 focused unit, data source, BLoC, and widget test suites (27 tests) in `mobile/test/features/approvals/` and `mobile/test/features/version_compare/`.
+- [x] Authored `docs/flutter/SPRINT_6_IMPLEMENTATION_REPORT.md` and `docs/flutter/SPRINT_6_SETUP_AND_VERIFICATION.md`.
+- [x] Authored `docs/audit/sprints/SPRINT_6_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES).
+- [x] Implemented Task management entity, models, and remote data source consuming verified `GET /api/v1/tasks`, `POST /api/v1/tasks`, and `GET /api/v1/tasks/:id`.
+- [x] Implemented Task operations: status transitions (`OPEN`, `IN_PROGRESS`, `COMPLETED`), assignment, due date warnings, priority badges, and creation via `PATCH /api/v1/tasks/:id`.
+- [x] Implemented Task collaboration thread consuming verified `POST /api/v1/tasks/:id/comments` and `GET /api/v1/tasks/:id/comments` with user identity stamps.
+- [x] Implemented Notification Center consuming verified `GET /api/v1/notifications`, `PATCH /api/v1/notifications/:id/read`, and `POST /api/v1/notifications/read-all`.
+- [x] Implemented Notification category filtering (`tasks`, `approvals`, `failures`, `expiry`, `general`), unread count tracking, and deep linking via `targetUrl`.
+- [x] Documented push notification platform gap accurately without fabricating APNs/FCM delivery.
+- [x] Implemented Evidence-Grounded Q&A (RAG) consuming verified `POST /api/v1/qa/query` (`QA_QUERY` permission).
+- [x] Implemented document scope focus selector consuming `GET /api/v1/qa/documents`.
+- [x] Implemented CitationCard rendering document title, version, page number, section, text snippet, superseded warnings, and access verification via `POST /api/v1/qa/citations/verify`.
+- [x] Implemented ungrounded output prevention with prominent abstention notices when evidence is insufficient (`INSUFFICIENT_EVIDENCE` / `ABSTAINED`).
+- [x] Implemented QA feedback telemetry dispatch consuming `POST /api/v1/qa/traces/:traceId/feedback`.
+- [x] Registered `/tasks`, `/tasks/:id`, `/notifications`, and `/qa` in `app_router.dart`, and registered all Sprint 7 dependencies in `injection_container.dart`.
+- [x] Added notification bell in `DashboardScreen` app bar and quick action shortcuts for Grounded Q&A and Tasks.
+- [x] Authored 6 focused unit, BLoC, and widget test suites (19 tests) in `mobile/test/features/qa/`, `mobile/test/features/notifications/`, and `mobile/test/features/tasks/`.
+- [x] Authored `docs/flutter/SPRINT_7_IMPLEMENTATION_REPORT.md` and `docs/flutter/SPRINT_7_SETUP_AND_VERIFICATION.md`.
+- [x] Authored `docs/audit/sprints/SPRINT_7_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES).
+
+- [x] Implemented Restricted Mobile Administration feature under `mobile/lib/features/admin/` with operational telemetry, user directory, workflow rules, and operations DLQ.
+- [x] Implemented Emergency Legal Hold feature under `mobile/lib/features/legal_hold/` with mandatory justification, freeze warnings, explicit confirmation, and server-confirmed state changes.
+- [x] Wired administrative routes in `app_router.dart`, registered dependencies in `injection_container.dart`, and linked shortcut in `user_profile_screen.dart`.
+- [x] Added standard typed network exception classes (`ForbiddenException`, `UnauthorizedException`, etc.) in `network_exceptions.dart`.
+- [x] Authored 5 focused unit and widget test suites (28 tests) in `mobile/test/features/admin/` and `mobile/test/features/legal_hold/`.
+- [x] Reconciled Sprint 7 test count breakdown (19 tests: 8 Q&A, 5 notifications, 6 tasks) in audit records.
+- [x] Authored `docs/flutter/SPRINT_8_IMPLEMENTATION_REPORT.md` and `docs/flutter/SPRINT_8_SETUP_AND_VERIFICATION.md`.
+- [x] Authored `docs/audit/sprints/SPRINT_8_AUDIT.md` (Sprint Gate: PASS_WITH_NONBLOCKING_ISSUES).
+
+- [x] Hardened `AuthInterceptor` with fast-path retry on concurrent 401s, eliminating redundant refresh requests.
+- [x] Implemented in-flight duplicate mutation prevention across all BLoCs (`AdminBloc`, `LegalHoldBloc`, `ApprovalDetailBloc`, `ReviewWorkbenchBloc`, `TaskBloc`).
+- [x] Created complete native Android production scaffolding under `mobile/android/` (`AndroidManifest.xml`, `network_security_config.xml`, `build.gradle`, `proguard-rules.pro`, `settings.gradle`).
+- [x] Verified PII and credential regex redaction in `AppLogger`.
+- [x] Authored 18 focused hardening test suites in `mobile/test/` (bringing application total to 210 tests across 54 files).
+- [x] Authored `docs/flutter/SPRINT_9_IMPLEMENTATION_REPORT.md`, `docs/flutter/SPRINT_9_SECURITY_AND_PERFORMANCE_AUDIT.md`, `docs/flutter/SPRINT_9_TEST_AND_RELEASE_READINESS.md`, and `docs/audit/sprints/SPRINT_9_AUDIT.md`.
+- [x] Reconfirmed toolchain limitation `BLK-001` (`flutter` and `dart` absent from PATH); marked test/build execution `NOT_RUN`.
+- [x] Implemented Pillar 1: Recreated Angular `StatusBadge` in Flutter (`AppStatusBadge`) with all 14 lifecycle states; created 4-tier enterprise navigation drawer (`AppSidebarDrawer`); upgraded `AppScaffold` and `AppRouter` with responsive desktop sidebar breakpoint at 768dp.
+- [x] Implemented Pillar 2: Created full feature parity screens for `AdminSecurityScreen` (MFA & PII masking), `AdminIntegrationsScreen` (ERP & IMAP connectors), `AdminAuditLedgerScreen` (SHA-256 event ledger), `AdminTraceScreen` (Correlation ID latency stepper), and `ReportsAnalyticsScreen` (Executive, AI accuracy, SLA tracking).
+- [x] Implemented Pillar 3: Implemented Server-Sent Events (SSE) `/notifications/stream` listener with single-use tickets in `NotificationRemoteDataSource` and wired live unread count updates in `NotificationBloc`.
+- [x] Implemented Pillar 4: Built responsive 50/50 horizontal split-screen review canvas in `ReviewWorkbenchScreen` matching Angular's desktop review workbench for tablets and desktops (>= 768dp).
+- [x] Implemented Pillar 5: Authored dedicated GitHub Actions CI workflows (`.github/workflows/mobile-ci.yml` and `.github/workflows/ci.yml`) automating Flutter test execution and release AAB compilation; authored 9 new test suites expanding the test inventory to 230 tests across 63 test files; delivered `docs/flutter/FLUTTER_ANGULAR_PARITY_VERIFICATION_REPORT.md`.
+- [x] Completed Remediation Phase 1 (Angular Frontend Contract & Auth Hardening):
+  - Fixed upload endpoint contract mismatch (`DEF-001` - P0) targeting canonical `POST /api/v1/documents/upload`.
+  - Stripped client-side password validation fallback (`DEF-009` - P1) and arbitrary admin user generation in `auth.ts`.
+  - Removed demo role quick-switcher pills from `login.html` and stripped bypass methods in `login.ts` (`DEF-010` - P1).
+  - Implemented queued silent token refresh in `authHttpInterceptor` targeting `POST /api/v1/auth/refresh` on 401 (`DEF-011` - P1).
+  - Routed direct document deletion requests to compliant retention workflow `POST /retention/cases` (`DEF-003` - P2).
+  - Expanded Angular unit test suites to 17 test files, achieving 77/77 passed tests (100% green).
+  - Produced `docs/audit/FRONTEND_HARDENING_VERIFICATION_REPORT.md`.
+
+---
+
+## 2. Roadmap Progress & Next Action
+- **Roadmap Status:** **Phase 1 Complete (Angular Frontend Contract & Auth Hardening: PASS)**.
+- **Next Action:** Phase 2: Backend Test Fixtures & OpenAPI Specification Sync (`DOCUNEXA_REMEDIATION_ROADMAP.md` Section 3).
+- **Mandatory Boundary:** STOPPED. Awaiting explicit user authorization before initiating Phase 2.
+
+---
+
+## 3. Active Blockers & Status
+- **BLK-001 (Host Tooling):** Flutter and Dart SDKs not in Windows PATH. (Mitigated: Full code generation, structure, and test specifications prepared in-repo; runbook provided in `SPRINT_9_TEST_AND_RELEASE_READINESS.md`).
+- **BLK-002 (In-Memory Persistence):** RESOLVED in Sprint 0D via `persistence-initializer.ts` wired to `server.ts`.
+- **DEC-016 (MFA Completion Contract):** Backend `loginHandler` requires re-submitting original credentials alongside `mfaCode` to complete TOTP challenge.
+- **DEC-017 (Document Download Gap):** Backend does not expose raw binary download route; server-rendered page raster preview (`/documents/:id/pages/:pageNo/image`) is the authorized viewing operation.
+- **DEC-018 (Evidence Coordinates):** Source bounding boxes are normalized ratios in $[0.0, 1.0]$ relative to page dimensions; scaled against rendered image dimensions on the canvas.
+- **DEC-019 (Math Discrepancy Override):** Backend requires an explicit `overrideReason` for `APPROVE` decisions when `netAmount + taxAmount != totalAmount`.
+- **DEC-020 (Separation of Duties Policy Codes):** Backend enforces `SOD_VIOLATION_SUBMITTER`, `SOD_VIOLATION_REVIEWER`, and `SOD_VIOLATION_DUPLICATE_APPROVER` on `POST /approvals/:id/decide`.
+- **DEC-021 (Outbound ERP Outbox Publishing):** Outbound ERP publishing uses `POST /erp/publish/:id` with idempotency keys (`IDEMP-...`); avoids duplicate dispatches.
+- **DEC-022 (Grounded Q&A Citation Verification):** Citation verification consumes `POST /api/v1/qa/citations/verify` using `{ documentId, citationId }` to confirm user authorization without trusting client-side claims.
+- **DEC-023 (In-App vs Push Notifications):** In-app notification polling and category management is fully operational; native FCM/APNs push delivery is documented as an infrastructure gap awaiting cloud provider credentials.
+- **DEC-024 (Emergency Legal Hold Mandatory Justification):** Server-side retention contracts mandate `matterName`, `matterNumber`, and `reason` when initiating a hold, and `releaseReason` when releasing; mobile UI enforces validation prior to dispatch and displays freeze warnings.
+- **DEC-025 (Restricted Admin DLQ In-Flight Guards):** In-flight DLQ retry guards prevent duplicate job requeuing dispatches.
+- **DEC-026 (Concurrent 401 Fast-Path & Duplicate Concurrency Guards):** Token comparison fast-path in `AuthInterceptor` prevents redundant `/auth/refresh` calls; in-flight submission guards protect high-impact mutations against duplicate dispatch.
+- **Gate Status:** Sprints 0–9 PASS_WITH_NONBLOCKING_ISSUES. **ALL SPRINTS COMPLETE. STOPPED.**
+
+

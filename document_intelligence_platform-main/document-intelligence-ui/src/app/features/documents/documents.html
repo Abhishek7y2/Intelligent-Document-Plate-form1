@@ -1,0 +1,252 @@
+<div class="documents-page">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">REPOSITORY & METADATA</span>
+      <h1>Document Repository</h1>
+      <p>Multi-tenant document store with versioning, pagination, column sorting, and bulk export capabilities.</p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn-secondary" (click)="openExportModal()">
+        📤 Scoped Export
+      </button>
+      <a routerLink="/intake" class="btn-primary">
+        + Upload Document
+      </a>
+    </div>
+  </div>
+
+  <!-- CATEGORY TABS -->
+  <nav class="category-tabs">
+    @for (tab of categoryTabs; track tab) {
+      <button
+        type="button"
+        class="cat-tab-btn"
+        [class.active]="selectedCategory === tab"
+        (click)="setCategoryTab(tab)"
+      >
+        {{ tab }}
+      </button>
+    }
+  </nav>
+
+  <!-- FILTERS & VIEW MODE BAR -->
+  <section class="filter-card">
+    <div class="search-box">
+      <span>⌕</span>
+      <input
+        type="text"
+        placeholder="Search documents by title, ID, type or owner..."
+        [(ngModel)]="searchTerm"
+      />
+    </div>
+
+    <select [(ngModel)]="selectedType">
+      <option>All Types</option>
+      <option>Supplier Contract</option>
+      <option>Purchase Invoice</option>
+      <option>Internal Policy</option>
+    </select>
+
+    <select [(ngModel)]="selectedStatus">
+      <option>All Status</option>
+      <option>Approved/Published</option>
+      <option>Review</option>
+      <option>Pending approval</option>
+      <option>Quarantined</option>
+    </select>
+
+    <div class="view-toggle-buttons">
+      <button
+        type="button"
+        class="toggle-btn"
+        [class.active]="viewMode === 'grid'"
+        (click)="setViewMode('grid')"
+        title="Grid View"
+      >
+        ❖ Grid
+      </button>
+      <button
+        type="button"
+        class="toggle-btn"
+        [class.active]="viewMode === 'table'"
+        (click)="setViewMode('table')"
+        title="Table View"
+      >
+        ☰ Table
+      </button>
+    </div>
+
+    <button type="button" class="clear-button" (click)="clearFilters()">Clear</button>
+  </section>
+
+  <!-- BULK ACTIONS BAR (TASK 7E Item 1) -->
+  @if (selectedDocIds.length > 0) {
+    <div class="bulk-actions-bar">
+      <span><strong>{{ selectedDocIds.length }}</strong> document(s) selected:</span>
+      <div class="bulk-btns">
+        <button type="button" class="btn-bulk" (click)="bulkAction('Bulk Export')">📤 Bulk Export</button>
+        <button type="button" class="btn-bulk" (click)="bulkAction('Bulk Re-scan')">🔄 Bulk Re-scan</button>
+        <button type="button" class="btn-bulk danger" (click)="bulkAction('Bulk Archive')">🗑️ Bulk Archive</button>
+      </div>
+    </div>
+  }
+
+  <!-- CONTENT VIEW -->
+  @if (isLoading()) {
+    <app-loading-state layout="cards" message="Loading versioned document repository..."></app-loading-state>
+  } @else if (hasError()) {
+    <app-error-state (retry)="retryLoad()"></app-error-state>
+  } @else {
+    <!-- GRID VIEW WITH WRAPPING FIX (TASK 7E Item 1) -->
+    @if (viewMode === 'grid') {
+      <div class="documents-grid-view">
+        @for (doc of paginatedDocuments; track doc.id) {
+          <div class="grid-doc-card" [class.selected]="isDocSelected(doc.id)">
+            <div class="card-header-bar">
+              <input type="checkbox" [checked]="isDocSelected(doc.id)" (change)="toggleSelectDoc(doc.id)" class="doc-chk" />
+              <span class="file-icon">PDF</span>
+              <app-status-badge [status]="doc.status"></app-status-badge>
+            </div>
+
+            <div class="card-body">
+              <a [routerLink]="['/documents', doc.id]" class="grid-title-link" title="{{ doc.name }}">{{ doc.name }}</a>
+              <span class="doc-sub">{{ doc.id }} · {{ doc.type }}</span>
+            </div>
+
+            <!-- GRID TAG WRAPPING FIX (TASK 7E Item 1) -->
+            <div class="grid-tags-wrapper">
+              <span class="grid-tag">{{ doc.size }}</span>
+              <span class="grid-tag">{{ doc.pages }} pgs</span>
+              <span class="grid-tag">{{ doc.owner }}</span>
+            </div>
+
+            <div class="card-footer-bar">
+              <span class="updated-time">{{ doc.updatedAt }}</span>
+              <a [routerLink]="['/documents', doc.id]" class="btn-view-detail">View Detail →</a>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- TABLE VIEW WITH COLUMN SORTING (TASK 7E Item 1) -->
+    @if (viewMode === 'table') {
+      <div class="table-wrapper">
+        <table class="repo-table">
+          <thead>
+            <tr>
+              <th class="chk-col"><input type="checkbox" [checked]="isAllPageSelected" (change)="toggleSelectAllPage()" /></th>
+              <th class="sortable" (click)="toggleSort('name')">
+                DOCUMENT TITLE {{ sortField === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕' }}
+              </th>
+              <th>TYPE</th>
+              <th class="sortable" (click)="toggleSort('size')">
+                SIZE {{ sortField === 'size' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕' }}
+              </th>
+              <th class="sortable" (click)="toggleSort('updatedAt')">
+                UPDATED {{ sortField === 'updatedAt' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕' }}
+              </th>
+              <th class="sortable" (click)="toggleSort('status')">
+                STATUS {{ sortField === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '↕' }}
+              </th>
+              <th class="text-right">ACTION</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (doc of paginatedDocuments; track doc.id) {
+              <tr [class.selected-row]="isDocSelected(doc.id)">
+                <td class="chk-col"><input type="checkbox" [checked]="isDocSelected(doc.id)" (change)="toggleSelectDoc(doc.id)" /></td>
+                <td>
+                  <a [routerLink]="['/documents', doc.id]" class="tbl-doc-title">{{ doc.name }}</a>
+                  <span class="tbl-doc-id">{{ doc.id }} · By {{ doc.owner }}</span>
+                </td>
+                <td><span class="type-tag">{{ doc.type }}</span></td>
+                <td>{{ doc.size }}</td>
+                <td>{{ doc.updatedAt }}</td>
+                <td><app-status-badge [status]="doc.status"></app-status-badge></td>
+                <td class="text-right">
+                  <a [routerLink]="['/documents', doc.id]" class="tbl-action-btn">View Detail</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- SERVER-STYLE PAGINATION COMPONENT (TASK 7E Item 1) -->
+    <div class="pagination-footer">
+      <span class="page-info">
+        Showing <strong>{{ (currentPage - 1) * pageSize + 1 }}</strong> - <strong>{{ paginatedEndCount }}</strong> of <strong>{{ filteredDocuments.length }}</strong> documents
+      </span>
+
+      <div class="pagination-controls">
+        <button type="button" class="btn-page-step" (click)="prevPage()" [disabled]="currentPage <= 1">‹ Previous</button>
+        <span class="current-page-num">Page <strong>{{ currentPage }}</strong> of {{ totalPages }}</span>
+        <button type="button" class="btn-page-step" (click)="nextPage()" [disabled]="currentPage >= totalPages">Next ›</button>
+      </div>
+    </div>
+
+    @if (filteredDocuments.length === 0) {
+      <app-empty-state
+        variant="documents"
+        title="No documents found"
+        message="No documents match your query or active filters."
+        actionLabel="Clear Filters"
+        (action)="clearFilters()"
+      ></app-empty-state>
+    }
+  }
+
+  <!-- EXPORT MODAL WITH FILTER MIRRORING & AUDIT NOTE (TASK 7E Item 2) -->
+  @if (showExportModal) {
+    <div class="modal-backdrop" (click)="closeExportModal()">
+      <div class="export-modal-card" (click)="$event.stopPropagation()">
+        <h3>📤 Scoped Export Configuration</h3>
+        
+        <!-- ACTIVE FILTER SCOPE MIRRORING -->
+        <div class="filter-mirroring-box">
+          <span class="mirror-title">Active Filter Scope Mirrored:</span>
+          <div class="mirror-chips">
+            <span class="m-chip">Category: {{ selectedCategory }}</span>
+            <span class="m-chip">Type: {{ selectedType }}</span>
+            <span class="m-chip">Status: {{ selectedStatus }}</span>
+            <span class="m-chip highlight">{{ filteredDocuments.length }} Documents Included</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Export Format:</label>
+          <select [(ngModel)]="exportFormat" class="modal-select">
+            <option value="CSV">CSV Spreadsheet (Metadata & Field Values)</option>
+            <option value="JSON">JSON Schema Payload & OCR Bounding Spans</option>
+            <option value="PDF">PDF Renditions Package</option>
+          </select>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" [(ngModel)]="maskPIIData" />
+            Enforce Security PII & Sensitive Field Masking
+          </label>
+        </div>
+
+        <!-- AUDIT NOTE (TASK 7E Item 2) -->
+        <div class="audit-notice-card">
+          <span class="notice-icon">⚠️</span>
+          <p><strong>Audit Log Notice:</strong> This export operation will be logged with your user identity, timestamp, filter constraints, and target format.</p>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeExportModal()">Cancel</button>
+          <button type="button" class="btn-primary" (click)="executeScopedExport()">Generate & Download Export</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (exportSuccessToast) {
+    <div class="toast-popup"><span>{{ exportSuccessToast }}</span></div>
+  }
+</div>

@@ -1,0 +1,29 @@
+=== EVIDENCE FOR CLAIM 7: BACKUP AND RESTORE DRILL ===
+Claim/Requirement: Execute scripts/backup and restore-drill on a dataset of at least 5,000 documents with objects; report data volume, backup time, restore time, and verification results. State what RPO is supported by the scripts as scheduled.
+
+RESULT: FALSE / CRITICAL DEFECT
+Execution Evidence:
+1. `powershell -ExecutionPolicy Bypass -File scripts/backup.ps1`
+   Output:
+   - Attempted docker exec pg_dump against docunexa-postgres-16-sandbox.
+   - Failed: `failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine...`
+   - Generated `postgres_dump.dump` of EXACTLY 0 BYTES.
+   - Generated `mongodb_archive.gz` containing 50 bytes of uncompressed plain text: `DOCUNEXA_MONGODB_DERIVED_ARCHIVE_20261016_114303`.
+   - Despite total failure to extract any database data, script printed: `Backup process completed successfully.` with exit code 0.
+2. `powershell -ExecutionPolicy Bypass -File scripts/restore.ps1`
+   Output:
+   - Checksum verification checked the empty and fake files against the manifest and marked them `Artifact verified`.
+   - Attempted `docker exec pg_restore`: failed with docker API connection error.
+   - Script suppressed the error and printed `PostgreSQL restoration complete.`
+   - Output: `Restore operation completed successfully.`
+3. Verification Script Failure:
+   - Command: `node scripts/verify-restore.cjs`
+   - Error: `Error: Cannot find module 'pg'`. The script fails to run because `pg` is in `backend/node_modules`, which is not in the require lookup path for `scripts/`.
+4. Code Audit of `scripts/verify-restore.cjs`:
+   - Line 84: `else { // Stored via virtual key; matchCount++; }` — if a document payload file is missing from disk, it treats it as a successful match!
+   - Lines 100-104: Fabricates hardcoded MongoDB collection counts without connecting to MongoDB:
+     `report.mongoCollectionCounts = { derived_documents: report.documentCount, ocr_pages: report.documentCount * 2, audit_events: 25 };`
+5. RPO Analysis:
+   - Supported RPO: Snapshot interval only (e.g. 24h if daily, 1h if hourly).
+   - Zero WAL archiving, continuous replication, or PITR is implemented.
+   - Data volume verified: 0 bytes (empty/fake).

@@ -1,0 +1,1049 @@
+<div class="profile-container">
+
+  <!-- =========================================================================
+       1. TOP BREADCRUMB & PAGE HEADER
+       ========================================================================= -->
+  <nav class="profile-breadcrumb-nav" aria-label="Breadcrumb">
+    <span class="crumb-text">Workspace</span>
+    <span class="crumb-separator">/</span>
+    <span class="crumb-text">Settings</span>
+    <span class="crumb-separator">/</span>
+    <span class="crumb-text current">My Profile</span>
+  </nav>
+
+  <div class="profile-page-header">
+    <h1 class="page-title">My Profile</h1>
+    <p class="page-subtitle">Manage your employee identity, contact information, and account security.</p>
+  </div>
+
+  <!-- =========================================================================
+       2. COVER BANNER & PROFILE HERO SUMMARY
+       ========================================================================= -->
+  <div class="profile-hero-card">
+    <!-- Mountain Cover Banner -->
+    <div
+      class="cover-banner-area"
+      [style.backgroundImage]="'url(' + profileData().coverImageUrl + ')'"
+      role="img"
+      aria-label="Profile cover image"
+    >
+      <div class="cover-gradient-overlay"></div>
+
+      <div class="cover-top-actions">
+        <button
+          type="button"
+          class="btn-change-cover"
+          (click)="triggerCoverFileInput()"
+          aria-label="Change Cover Image"
+        >
+          <svg class="cover-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <span class="btn-text">Change Cover Image</span>
+        </button>
+        <span class="cover-hint-tag">Recommended size: 1920 × 480 (JPG/PNG)</span>
+      </div>
+
+      <!-- Hidden file input for cover image -->
+      <input
+        type="file"
+        #coverFileInput
+        class="hidden-file-input"
+        (change)="onCoverFileSelected($event)"
+        accept="image/png, image/jpeg, image/jpg"
+        tabindex="-1"
+      />
+    </div>
+
+    <!-- Summary Bar (Avatar + Details + Primary Actions) -->
+    <div class="hero-summary-bar">
+
+      <!-- Circular Avatar overlapping bottom edge of cover -->
+      <div class="avatar-cluster">
+        <div class="avatar-ring">
+          <img
+            [src]="profileData().avatarImageUrl"
+            [alt]="profileData().firstName + ' ' + profileData().lastName"
+            class="avatar-image"
+            (error)="onAvatarError($event)"
+          />
+        </div>
+        <button
+          type="button"
+          class="avatar-camera-btn"
+          (click)="triggerAvatarFileInput()"
+          title="Change profile photo"
+          aria-label="Change profile photo"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+        </button>
+
+        <!-- Hidden file input for avatar photo -->
+        <input
+          type="file"
+          #avatarFileInput
+          class="hidden-file-input"
+          (change)="onAvatarFileSelected($event)"
+          accept="image/png, image/jpeg, image/jpg"
+          tabindex="-1"
+        />
+      </div>
+
+      <!-- Identity Metadata -->
+      <div class="hero-identity-meta">
+        <div class="identity-name-line">
+          <h2 class="profile-full-name">{{ profileData().firstName }} {{ profileData().lastName }}</h2>
+
+          <div class="identity-badges-cluster">
+            <span class="badge-role-pill">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+              </svg>
+              <span>{{ profileData().role }}</span>
+            </span>
+
+            <span class="meta-pipe-divider">|</span>
+            <span class="employee-id-text">Employee ID: <strong class="emp-id-val">{{ profileData().employeeId }}</strong></span>
+
+            <span class="meta-pipe-divider">|</span>
+            <span class="badge-status-pill">
+              <span class="green-indicator-dot"></span>
+              <span>{{ profileData().employmentStatus }}</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="identity-subline">
+          <span>{{ profileData().designation }}</span>
+          <span class="subline-dot">|</span>
+          <span>{{ profileData().department }}</span>
+          <span class="subline-dot">|</span>
+          <span>{{ profileData().accessScope }}</span>
+        </div>
+      </div>
+
+      <!-- Header Action Buttons -->
+      <div class="hero-actions-cluster">
+        <button
+          type="button"
+          class="btn-profile-primary"
+          (click)="openEditProfileModal()"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          <span>Edit Profile</span>
+        </button>
+
+        <button
+          type="button"
+          class="btn-profile-ghost"
+          (click)="openChangePasswordModal()"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>Change Password</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       3. 2x2 CARDS GRID (PERSONAL, EMPLOYMENT, SECURITY, PREFERENCES)
+       ========================================================================= -->
+  <div class="profile-cards-grid">
+
+    <!-- -----------------------------------------------------------------------
+         CARD 1: PERSONAL INFORMATION
+         ----------------------------------------------------------------------- -->
+    <div class="profile-card">
+      <div class="card-header">
+        <div class="card-icon-bubble">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <div class="card-header-titles">
+          <h3 class="card-title">Personal Information</h3>
+          <p class="card-subtitle">Your personal and contact information.</p>
+        </div>
+      </div>
+
+      <div class="card-form-grid">
+        <!-- First Name -->
+        <div class="form-field-group">
+          <label class="field-label">First Name <span class="required-star">*</span></label>
+          <input
+            type="text"
+            class="field-input"
+            [value]="profileData().firstName"
+            (change)="profileData().firstName = $any($event.target).value"
+          />
+        </div>
+
+        <!-- Last Name -->
+        <div class="form-field-group">
+          <label class="field-label">Last Name <span class="required-star">*</span></label>
+          <input
+            type="text"
+            class="field-input"
+            [value]="profileData().lastName"
+            (change)="profileData().lastName = $any($event.target).value"
+          />
+        </div>
+
+        <!-- Work Email (Full width) -->
+        <div class="form-field-group col-span-2">
+          <label class="field-label">Work Email <span class="required-star">*</span></label>
+          <div class="input-with-icon">
+            <svg class="input-prefix-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            <input
+              type="email"
+              class="field-input with-prefix"
+              [value]="profileData().workEmail"
+              readonly
+              title="Work email is managed by your organization's directory service"
+            />
+          </div>
+        </div>
+
+        <!-- Phone Number -->
+        <div class="form-field-group">
+          <label class="field-label">Phone Number <span class="required-star">*</span></label>
+          <div class="input-with-icon">
+            <svg class="input-prefix-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            <input
+              type="text"
+              class="field-input with-prefix"
+              [value]="profileData().phoneNumber"
+              (change)="profileData().phoneNumber = $any($event.target).value"
+            />
+          </div>
+        </div>
+
+        <!-- Preferred Name -->
+        <div class="form-field-group">
+          <label class="field-label">Preferred Name</label>
+          <input
+            type="text"
+            class="field-input"
+            [value]="profileData().preferredName"
+            (change)="profileData().preferredName = $any($event.target).value"
+          />
+        </div>
+
+        <!-- Date of Birth (Optional, full width or right aligned) -->
+        <div class="form-field-group col-span-2">
+          <label class="field-label">Date of Birth <span class="optional-label">(Optional)</span></label>
+          <div class="input-with-icon">
+            <svg class="input-prefix-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <input
+              type="text"
+              class="field-input with-prefix with-suffix"
+              [value]="profileData().dateOfBirth"
+              placeholder="e.g. Mar 15, 1990"
+              (change)="profileData().dateOfBirth = $any($event.target).value"
+            />
+            @if (profileData().dateOfBirth) {
+              <button
+                type="button"
+                class="input-clear-btn"
+                (click)="clearDob()"
+                title="Clear date of birth"
+                aria-label="Clear date of birth"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- -----------------------------------------------------------------------
+         CARD 2: EMPLOYMENT DETAILS
+         ----------------------------------------------------------------------- -->
+    <div class="profile-card">
+      <div class="card-header">
+        <div class="card-icon-bubble">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+        </div>
+        <div class="card-header-titles">
+          <h3 class="card-title">Employment Details</h3>
+          <p class="card-subtitle">Your employment and organizational details.</p>
+        </div>
+      </div>
+
+      <div class="card-form-grid">
+        <!-- Employee ID -->
+        <div class="form-field-group">
+          <label class="field-label">Employee ID</label>
+          <input
+            type="text"
+            class="field-input read-only-field"
+            [value]="profileData().employeeId"
+            readonly
+            title="Employee ID is a permanent enterprise record and cannot be changed"
+          />
+        </div>
+
+        <!-- Employment Status -->
+        <div class="form-field-group">
+          <label class="field-label">Employment Status</label>
+          <div class="select-wrapper">
+            <select class="field-select status-select">
+              <option value="Active" selected>● Active</option>
+              <option value="On Leave">● On Leave</option>
+              <option value="Inactive">● Inactive</option>
+            </select>
+            <span class="select-chevron">⌄</span>
+          </div>
+        </div>
+
+        <!-- Designation -->
+        <div class="form-field-group">
+          <label class="field-label">Designation</label>
+          <input
+            type="text"
+            class="field-input"
+            [value]="profileData().designation"
+            (change)="profileData().designation = $any($event.target).value"
+          />
+        </div>
+
+        <!-- Manager -->
+        <div class="form-field-group">
+          <label class="field-label">Manager</label>
+          <input
+            type="text"
+            class="field-input"
+            [value]="profileData().manager"
+            (change)="profileData().manager = $any($event.target).value"
+          />
+        </div>
+
+        <!-- Department -->
+        <div class="form-field-group">
+          <label class="field-label">Department</label>
+          <input
+            type="text"
+            class="field-input"
+            [value]="profileData().department"
+            (change)="profileData().department = $any($event.target).value"
+          />
+        </div>
+
+        <!-- Location -->
+        <div class="form-field-group">
+          <label class="field-label">Location</label>
+          <input
+            type="text"
+            class="field-input"
+            [value]="profileData().location"
+            (change)="profileData().location = $any($event.target).value"
+          />
+        </div>
+
+        <!-- Employee Type -->
+        <div class="form-field-group">
+          <label class="field-label">Employee Type</label>
+          <input
+            type="text"
+            class="field-input"
+            [value]="profileData().employeeType"
+            (change)="profileData().employeeType = $any($event.target).value"
+          />
+        </div>
+
+        <!-- Date Joined -->
+        <div class="form-field-group">
+          <label class="field-label">Date Joined</label>
+          <div class="input-with-icon">
+            <svg class="input-prefix-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <input
+              type="text"
+              class="field-input with-prefix"
+              [value]="profileData().dateJoined"
+              readonly
+              title="Official onboarding timestamp registered in DocNexa Identity Services"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- -----------------------------------------------------------------------
+         CARD 3: ACCOUNT & SECURITY
+         ----------------------------------------------------------------------- -->
+    <div class="profile-card">
+      <div class="card-header">
+        <div class="card-icon-bubble">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <div class="card-header-titles">
+          <h3 class="card-title">Account & Security</h3>
+          <p class="card-subtitle">Manage your login, security settings, and active sessions.</p>
+        </div>
+      </div>
+
+      <div class="security-items-list">
+        <!-- Password Row -->
+        <div class="security-row">
+          <div class="security-meta">
+            <span class="security-label">Password</span>
+            <span class="security-value masked-dots">{{ profileData().passwordMasked }}</span>
+          </div>
+          <button
+            type="button"
+            class="btn-security-action"
+            (click)="openChangePasswordModal()"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>Update Password</span>
+          </button>
+        </div>
+
+        <!-- MFA Row -->
+        <div class="security-row">
+          <div class="security-meta">
+            <span class="security-label">Multi-Factor Authentication (MFA)</span>
+            <span class="security-value mfa-status">
+              <span class="green-indicator-dot"></span>
+              <span>{{ profileData().mfaEnabled ? 'Enabled' : 'Disabled' }}</span>
+            </span>
+          </div>
+          <button
+            type="button"
+            class="btn-security-action"
+            (click)="openMfaModal()"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>Manage MFA</span>
+          </button>
+        </div>
+
+        <!-- Last Login Row -->
+        <div class="security-row">
+          <div class="security-meta">
+            <span class="security-label">Last Login</span>
+            <span class="security-value icon-text-val">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>{{ profileData().lastLogin }}</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Last Password Change Row -->
+        <div class="security-row">
+          <div class="security-meta">
+            <span class="security-label">Last Password Change</span>
+            <span class="security-value icon-text-val">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>{{ profileData().lastPasswordChange }}</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Active Sessions Row -->
+        <div class="security-row">
+          <div class="security-meta">
+            <span class="security-label">Active Sessions</span>
+            <span class="security-value icon-text-val">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              <span>{{ profileData().activeSessionsCount }} devices</span>
+            </span>
+          </div>
+          <button
+            type="button"
+            class="btn-security-action"
+            (click)="openSessionsModal()"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            <span>Manage Sessions</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- -----------------------------------------------------------------------
+         CARD 4: PERMISSIONS & PREFERENCES
+         ----------------------------------------------------------------------- -->
+    <div class="profile-card">
+      <div class="card-header">
+        <div class="card-icon-bubble">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </div>
+        <div class="card-header-titles">
+          <h3 class="card-title">Permissions & Preferences</h3>
+          <p class="card-subtitle">Your role, access scope, and application preferences.</p>
+        </div>
+      </div>
+
+      <div class="preferences-content">
+        <!-- 2x2 Dropdowns Grid -->
+        <div class="prefs-dropdowns-grid">
+          <!-- Role -->
+          <div class="form-field-group">
+            <label class="field-label">Role</label>
+            <div class="select-wrapper">
+              <div class="select-icon-prefix">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                </svg>
+              </div>
+              <select class="field-select with-icon" [(ngModel)]="profileData().role">
+                <option value="Org Admin">Org Admin</option>
+                <option value="Reviewer">Reviewer</option>
+                <option value="Approver">Approver</option>
+                <option value="Contributor">Contributor</option>
+                <option value="Auditor">Auditor</option>
+              </select>
+              <span class="select-chevron">⌄</span>
+            </div>
+          </div>
+
+          <!-- Access Scope -->
+          <div class="form-field-group">
+            <label class="field-label">Access Scope</label>
+            <div class="select-wrapper">
+              <div class="select-icon-prefix">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                  <line x1="9" y1="22" x2="9" y2="22.01"></line>
+                  <line x1="15" y1="22" x2="15" y2="22.01"></line>
+                  <line x1="8" y1="6" x2="8" y2="6.01"></line>
+                  <line x1="16" y1="6" x2="16" y2="6.01"></line>
+                  <line x1="8" y1="10" x2="8" y2="10.01"></line>
+                  <line x1="16" y1="10" x2="16" y2="10.01"></line>
+                  <line x1="8" y1="14" x2="8" y2="14.01"></line>
+                  <line x1="16" y1="14" x2="16" y2="14.01"></line>
+                  <line x1="8" y1="18" x2="8" y2="18.01"></line>
+                  <line x1="16" y1="18" x2="16" y2="18.01"></line>
+                </svg>
+              </div>
+              <select class="field-select with-icon" [(ngModel)]="profileData().accessScope">
+                <option value="Acme Enterprise">Acme Enterprise</option>
+                <option value="Global Organization">Global Organization</option>
+                <option value="Tenant Alpha">Tenant Alpha</option>
+              </select>
+              <span class="select-chevron">⌄</span>
+            </div>
+          </div>
+
+          <!-- Timezone -->
+          <div class="form-field-group">
+            <label class="field-label">Timezone</label>
+            <div class="select-wrapper">
+              <div class="select-icon-prefix">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+              </div>
+              <select class="field-select with-icon" [(ngModel)]="profileData().timezone">
+                <option value="America/New_York">America/New_York</option>
+                <option value="Europe/London">Europe/London</option>
+                <option value="Asia/Kolkata">Asia/Kolkata</option>
+                <option value="America/Los_Angeles">America/Los_Angeles</option>
+              </select>
+              <span class="select-chevron">⌄</span>
+            </div>
+          </div>
+
+          <!-- Language -->
+          <div class="form-field-group">
+            <label class="field-label">Language</label>
+            <div class="select-wrapper">
+              <div class="select-icon-prefix">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+              </div>
+              <select class="field-select with-icon" [(ngModel)]="profileData().language">
+                <option value="English (US)">English (US)</option>
+                <option value="English (UK)">English (UK)</option>
+                <option value="German">Deutsch (DE)</option>
+                <option value="French">Français (FR)</option>
+                <option value="Spanish">Español (ES)</option>
+              </select>
+              <span class="select-chevron">⌄</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notification Preferences Section -->
+        <div class="notif-prefs-block">
+          <div class="notif-header">
+            <svg class="notif-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            <div>
+              <h4 class="notif-title">Notification Preferences</h4>
+              <p class="notif-subtitle">Choose how you want to receive notifications.</p>
+            </div>
+          </div>
+
+          <div class="notif-checkboxes">
+            <!-- Email Alerts Checkbox -->
+            <label class="custom-checkbox-row">
+              <input
+                type="checkbox"
+                class="sr-checkbox"
+                [checked]="profileData().emailAlerts"
+                (change)="toggleEmailAlerts()"
+              />
+              <span class="checkbox-visual">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span class="checkbox-label-text">Email alerts for document activity, approvals, and system updates</span>
+            </label>
+
+            <!-- In-App Notifications Checkbox -->
+            <label class="custom-checkbox-row">
+              <input
+                type="checkbox"
+                class="sr-checkbox"
+                [checked]="profileData().inAppNotifications"
+                (change)="toggleInAppNotifications()"
+              />
+              <span class="checkbox-visual">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span class="checkbox-label-text">In-app notifications within DocNexa</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       4. FOOTER INFORMATIONAL NOTICE
+       ========================================================================= -->
+  <div class="footer-security-banner">
+    <div class="banner-icon-bubble">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+    </div>
+    <span class="banner-notice-text">Sensitive information is protected by your organization's access policies.</span>
+  </div>
+
+  <!-- =========================================================================
+       5. MODAL DIALOGS (EDIT PROFILE, CHANGE PASSWORD, MFA, SESSIONS)
+       ========================================================================= -->
+
+  <!-- EDIT PROFILE MODAL -->
+  @if (isEditProfileModalOpen()) {
+    <div class="modal-backdrop" (click)="closeEditProfileModal()">
+      <div class="modal-panel" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">Edit Personal Information</h3>
+          <button type="button" class="modal-close-btn" (click)="closeEditProfileModal()">×</button>
+        </div>
+
+        <form [formGroup]="editProfileForm" (ngSubmit)="saveProfileChanges()">
+          <div class="modal-body">
+            <div class="form-row-2">
+              <div class="form-field-group">
+                <label class="field-label">First Name *</label>
+                <input type="text" formControlName="firstName" class="field-input" />
+              </div>
+              <div class="form-field-group">
+                <label class="field-label">Last Name *</label>
+                <input type="text" formControlName="lastName" class="field-input" />
+              </div>
+            </div>
+
+            <div class="form-field-group">
+              <label class="field-label">Phone Number *</label>
+              <input type="text" formControlName="phoneNumber" class="field-input" />
+            </div>
+
+            <div class="form-field-group">
+              <label class="field-label">Preferred Name</label>
+              <input type="text" formControlName="preferredName" class="field-input" />
+            </div>
+
+            <div class="form-field-group">
+              <label class="field-label">Date of Birth (Optional)</label>
+              <input type="text" formControlName="dateOfBirth" class="field-input" placeholder="e.g. Mar 15, 1990" />
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="closeEditProfileModal()">Cancel</button>
+            <button type="submit" class="btn-primary-action">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- CHANGE PASSWORD MODAL -->
+  @if (isChangePasswordModalOpen()) {
+    <div class="modal-backdrop" (click)="closeChangePasswordModal()">
+      <div class="modal-panel" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">Change Account Password</h3>
+          <button type="button" class="modal-close-btn" (click)="closeChangePasswordModal()">×</button>
+        </div>
+
+        <form [formGroup]="changePasswordForm" (ngSubmit)="submitPasswordChange()">
+          <div class="modal-body">
+            <div class="form-field-group">
+              <label class="field-label">Current Password *</label>
+              <input type="password" formControlName="currentPassword" class="field-input" placeholder="Enter existing password" />
+            </div>
+
+            <div class="form-field-group">
+              <label class="field-label">New Password * (Min 8 characters)</label>
+              <input type="password" formControlName="newPassword" class="field-input" placeholder="Enter new strong password" />
+            </div>
+
+            <div class="form-field-group">
+              <label class="field-label">Confirm New Password *</label>
+              <input type="password" formControlName="confirmPassword" class="field-input" placeholder="Re-enter new password" />
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="closeChangePasswordModal()">Cancel</button>
+            <button type="submit" class="btn-primary-action">Update Password</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- D.4: MANAGE MFA MULTI-STEP MODAL -->
+  @if (isMfaModalOpen()) {
+    <div class="modal-backdrop" (click)="closeMfaModal()">
+      <div class="modal-panel mfa-dialog-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <h3 class="modal-title">Two-Factor Authentication (MFA) Setup</h3>
+          <button type="button" class="modal-close-btn" (click)="closeMfaModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+          @if (mfaErrorMessage()) {
+            <div class="mfa-error-alert" role="alert">
+              <span>⚠️ {{ mfaErrorMessage() }}</span>
+            </div>
+          }
+
+          <!-- STEP 1: OVERVIEW -->
+          @if (mfaStep() === 'overview') {
+            <div class="mfa-status-banner" [class.enabled]="profileData().mfaEnabled">
+              <div class="mfa-icon-shield">🛡️</div>
+              <div>
+                <strong>MFA Status: {{ profileData().mfaEnabled ? 'Enabled & Active' : 'Disabled' }}</strong>
+                <p>Enhance organizational security by requiring a 6-digit one-time passcode generated by your authenticator app on every sign-in attempt.</p>
+              </div>
+            </div>
+
+            <div class="mfa-overview-actions">
+              @if (!profileData().mfaEnabled) {
+                <button type="button" class="btn-primary-action" (click)="startMfaEnrollment()">
+                  🚀 Begin MFA Enrollment
+                </button>
+              } @else {
+                <div class="active-mfa-btn-group">
+                  <button type="button" class="btn-warning-action" (click)="startMfaEnrollment()">
+                    🔄 Re-Enroll Authenticator App
+                  </button>
+                  <button type="button" class="btn-danger-action" (click)="startDisableMfa()">
+                    ✕ Disable MFA
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- STEP 2A: RE-ENROLL CURRENT CODE CHALLENGE -->
+          @if (mfaStep() === 're-enroll-auth') {
+            <div class="mfa-step-block">
+              <h4>Security Verification</h4>
+              <p>Because MFA is currently active, enter your current 6-digit authenticator code before generating a new secret:</p>
+
+              <div class="form-field-group">
+                <label class="field-label">Current 6-Digit Passcode *</label>
+                <input
+                  type="text"
+                  [(ngModel)]="enrollCurrentCode"
+                  maxlength="6"
+                  placeholder="000000"
+                  class="field-input code-input"
+                />
+              </div>
+
+              <div class="mfa-step-actions">
+                <button type="button" class="btn-cancel" (click)="mfaStep.set('overview')">Cancel</button>
+                <button type="button" class="btn-primary-action" (click)="submitReEnrollAuth()" [disabled]="isMfaLoading()">
+                  {{ isMfaLoading() ? 'Verifying...' : 'Continue to Re-Enroll' }}
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- STEP 2B: ENROLL QR & MANUAL KEY -->
+          @if (mfaStep() === 'enroll') {
+            <div class="mfa-enroll-container">
+              <div class="qr-code-section">
+                @if (enrollQrCodeUrl()) {
+                  <img [src]="enrollQrCodeUrl()" alt="MFA QR Code" class="mfa-qr-img" />
+                } @else {
+                  <div class="qr-placeholder-box">
+                    <span>Scan with Authenticator App</span>
+                  </div>
+                }
+              </div>
+
+              <div class="manual-key-box">
+                <span class="key-label">Manual Setup Key:</span>
+                <code class="secret-code">{{ enrollSecret() }}</code>
+                <span class="key-hint">Compatible with Google Authenticator, Microsoft Authenticator, 1Password, Bitwarden</span>
+              </div>
+
+              <div class="verify-code-section">
+                <label class="field-label">Enter 6-Digit Code from Authenticator to Confirm:</label>
+                <input
+                  type="text"
+                  [(ngModel)]="verifyCode"
+                  placeholder="000000"
+                  maxlength="6"
+                  class="field-input code-input"
+                />
+              </div>
+
+              <div class="mfa-step-actions">
+                <button type="button" class="btn-cancel" (click)="mfaStep.set('overview')">Back</button>
+                <button type="button" class="btn-primary-action" (click)="submitVerifyEnrollment()" [disabled]="verifyCode.length < 6 || isMfaLoading()">
+                  {{ isMfaLoading() ? 'Verifying Code...' : 'Verify & Enable MFA' }}
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- STEP 3: RECOVERY CODES DISPLAY (IN MEMORY ONLY, CONFIRMATION REQUIRED) -->
+          @if (mfaStep() === 'recovery-codes') {
+            <div class="recovery-codes-container">
+              <div class="recovery-warning-banner">
+                <span class="warn-icon">⚠️</span>
+                <div>
+                  <strong>Save Your One-Time Emergency Recovery Codes</strong>
+                  <p>These 8 recovery codes can be used to access your account if you lose your phone. They are displayed only once in memory and are never persisted.</p>
+                </div>
+              </div>
+
+              <div class="recovery-codes-grid">
+                @for (rc of recoveryCodes(); track rc) {
+                  <code class="recovery-code-chip">{{ rc }}</code>
+                }
+              </div>
+
+              <div class="recovery-action-buttons">
+                <button type="button" class="btn-action-ghost" (click)="copyRecoveryCodes()">
+                  📋 Copy All Codes
+                </button>
+                <button type="button" class="btn-action-ghost" (click)="downloadRecoveryCodesTxt()">
+                  ⬇ Download .txt
+                </button>
+              </div>
+
+              <div class="save-confirmation-checkbox">
+                <label class="checkbox-container">
+                  <input type="checkbox" [(ngModel)]="savedCodesConfirmed" />
+                  <span class="chk-label">I have saved these recovery codes in a secure password vault</span>
+                </label>
+              </div>
+
+              <div class="mfa-step-actions">
+                <button type="button" class="btn-primary-action" (click)="confirmSavedRecoveryCodes()" [disabled]="!savedCodesConfirmed">
+                  I Saved These — Finish Setup
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- STEP 4: DISABLE MFA CHALLENGE -->
+          @if (mfaStep() === 'disable') {
+            <div class="mfa-disable-container">
+              <div class="disable-warning">
+                <strong>⚠️ Warning: Disabling MFA Lowers Account Security</strong>
+                <p>To confirm disabling Multi-Factor Authentication, enter your current 6-digit TOTP code or an 8-character recovery code.</p>
+              </div>
+
+              <div class="form-field-group">
+                <label class="field-label">Verification Code or Recovery Code *</label>
+                <input
+                  type="text"
+                  [(ngModel)]="disableCode"
+                  placeholder="e.g. 123456 or a1b2c3d4"
+                  class="field-input code-input"
+                />
+              </div>
+
+              <div class="mfa-step-actions">
+                <button type="button" class="btn-cancel" (click)="mfaStep.set('overview')">Cancel</button>
+                <button type="button" class="btn-danger-action" (click)="submitDisableMfa()" [disabled]="!disableCode.trim() || isMfaLoading()">
+                  {{ isMfaLoading() ? 'Verifying...' : 'Confirm Disable MFA' }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MANAGE SESSIONS MODAL -->
+  @if (isSessionsModalOpen()) {
+    <div class="modal-backdrop" (click)="closeSessionsModal()">
+      <div class="modal-panel modal-wide" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">Active Devices & Sessions</h3>
+          <button type="button" class="modal-close-btn" (click)="closeSessionsModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+          @if (isLoadingSessions()) {
+            <div style="text-align: center; padding: 24px; color: #64748b;">
+              Loading active sessions...
+            </div>
+          } @else if (activeSessions().length > 0) {
+            <div class="sessions-list">
+              @for (session of activeSessions(); track session.id) {
+                <div class="session-item" [class.current]="session.isCurrent">
+                  <div class="device-icon">
+                    @if (session.deviceType === 'mobile') {
+                      📱
+                    } @else if (session.deviceType === 'tablet') {
+                      📟
+                    } @else {
+                      💻
+                    }
+                  </div>
+                  <div class="session-info">
+                    <strong>
+                      {{ session.browser }} on {{ session.os }}
+                      @if (session.isCurrent) { (Current Session) }
+                    </strong>
+                    <p>IP: {{ session.ipAddress }} · Last active: {{ session.lastUsedAt | date:'medium' }}</p>
+                  </div>
+                  @if (session.isCurrent) {
+                    <span class="current-badge">This Device</span>
+                  } @else {
+                    <button type="button" class="btn-revoke-session" (click)="revokeSession(session.id)">
+                      Revoke
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="sessions-list">
+              <div class="session-item current">
+                <div class="device-icon">💻</div>
+                <div class="session-info">
+                  <strong>Current Browser Session</strong>
+                  <p>Active Session</p>
+                </div>
+                <span class="current-badge">This Device</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" (click)="closeSessionsModal()">Close</button>
+          @if (activeSessions().length > 1 || profileData().activeSessionsCount > 1) {
+            <button type="button" class="btn-danger-action" (click)="revokeOtherSessions()">
+              Revoke All Other Sessions
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- TOAST NOTIFICATION -->
+  @if (toastMessage()) {
+    <div class="floating-toast-alert" [class]="toastType()">
+      <span class="toast-indicator">●</span>
+      <span class="toast-text">{{ toastMessage() }}</span>
+      <button type="button" class="toast-close" (click)="toastMessage.set(null)">×</button>
+    </div>
+  }
+
+</div>

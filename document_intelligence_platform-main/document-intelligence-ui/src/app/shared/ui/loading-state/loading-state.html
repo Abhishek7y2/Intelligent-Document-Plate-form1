@@ -1,0 +1,112 @@
+<div class="loading-state-wrapper" role="status" aria-live="polite">
+
+  @if (layout === 'default' || layout === 'spinner') {
+    <div class="loading-state default-spinner">
+      <div class="spinner"></div>
+      <div class="loading-content">
+        <strong>{{ message }}</strong>
+        <span>Please wait a moment...</span>
+      </div>
+    </div>
+  }
+
+  @else if (layout === 'cards') {
+    <div class="skeleton-cards-grid">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <div class="skeleton-card">
+          <div class="skeleton-shimmer skeleton-title"></div>
+          <div class="skeleton-shimmer skeleton-line short"></div>
+          <div class="skeleton-shimmer skeleton-box"></div>
+          <div class="skeleton-footer">
+            <div class="skeleton-shimmer skeleton-badge"></div>
+            <div class="skeleton-shimmer skeleton-button"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @else if (layout === 'table') {
+    <div class="skeleton-table">
+      <div class="skeleton-table-header">
+        <div class="skeleton-shimmer skeleton-search"></div>
+        <div class="skeleton-shimmer skeleton-filter"></div>
+      </div>
+      <div class="skeleton-table-rows">
+        @for (i of [1, 2, 3, 4, 5]; track i) {
+          <div class="skeleton-table-row">
+            <div class="skeleton-shimmer skeleton-cell avatar"></div>
+            <div class="skeleton-shimmer skeleton-cell wide"></div>
+            <div class="skeleton-shimmer skeleton-cell medium"></div>
+            <div class="skeleton-shimmer skeleton-cell short"></div>
+            <div class="skeleton-shimmer skeleton-cell badge"></div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @else if (layout === 'split-pane') {
+    <div class="skeleton-split-pane">
+      <div class="skeleton-pane left-pane">
+        <div class="skeleton-shimmer skeleton-header"></div>
+        <div class="skeleton-shimmer skeleton-document-preview"></div>
+      </div>
+      <div class="skeleton-pane right-pane">
+        <div class="skeleton-shimmer skeleton-header"></div>
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="skeleton-field-block">
+            <div class="skeleton-shimmer skeleton-label"></div>
+            <div class="skeleton-shimmer skeleton-input"></div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @else if (layout === 'detail') {
+    <div class="skeleton-detail">
+      <div class="skeleton-detail-header">
+        <div class="skeleton-shimmer skeleton-title"></div>
+        <div class="skeleton-shimmer skeleton-breadcrumbs"></div>
+      </div>
+      <div class="skeleton-detail-content">
+        <div class="skeleton-pane main-pane">
+          <div class="skeleton-shimmer skeleton-box tall"></div>
+        </div>
+        <div class="skeleton-pane side-pane">
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div class="skeleton-shimmer skeleton-meta-item"></div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  @else if (layout === 'dashboard') {
+    <div class="skeleton-dashboard">
+      <div class="skeleton-stats-grid">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="skeleton-stat-card">
+            <div class="skeleton-shimmer skeleton-circle"></div>
+            <div class="skeleton-stat-lines">
+              <div class="skeleton-shimmer skeleton-line short"></div>
+              <div class="skeleton-shimmer skeleton-title"></div>
+            </div>
+          </div>
+        }
+      </div>
+      <div class="skeleton-dashboard-panels">
+        <div class="skeleton-panel">
+          <div class="skeleton-shimmer skeleton-header"></div>
+          <div class="skeleton-shimmer skeleton-box tall"></div>
+        </div>
+        <div class="skeleton-panel">
+          <div class="skeleton-shimmer skeleton-header"></div>
+          <div class="skeleton-shimmer skeleton-box tall"></div>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

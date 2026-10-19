@@ -1,0 +1,20 @@
+=== EVIDENCE FOR CLAIM 8: MIGRATION 025 COMPATIBILITY VIEWS ===
+Claim/Requirement: On a database built from migration 001, do inserts/updates through the tasks API actually work? Show the test.
+
+RESULT: NOT VERIFIED / STRUCTURALLY FLAWED
+
+Findings:
+1. Migration Analysis:
+   - Migration 001 (`001_initial_schema.sql`) contains NO `tasks` or `platform_tasks` table.
+   - The underlying table `platform_tasks` is only introduced in Migration 024 (`024_bounding_box_evidence_and_tasks.sql`).
+   - Migration 025 (`025_tasks_compatibility_views.sql`) creates:
+     `CREATE VIEW tasks AS SELECT * FROM platform_tasks;`
+     `CREATE VIEW task_comments AS SELECT * FROM platform_task_comments;`
+   - If a database was built only up to migration 001, running migration 025 directly fails with `relation "platform_tasks" does not exist`.
+2. Controller Implementation:
+   - File: `backend/src/controllers/task.controller.ts` (lines 72, 191, 352, 365)
+   - Code directly queries `platform_tasks` (e.g. `INSERT INTO platform_tasks`, `UPDATE platform_tasks SET`), NOT the view `tasks`.
+   - Therefore, the tasks API does not route its DML operations through the migration 025 compatibility view.
+3. Test Suite Absence:
+   - Grep and file search across `backend/src` and `backend/tests` reveal ZERO unit or integration tests for `task.controller.ts` or `025_tasks_compatibility_views.sql` (no `*task*.spec.ts` exists in the backend).
+   - Live execution against PostgreSQL 16 is NOT VERIFIED due to the offline PostgreSQL sandbox container (Docker daemon stopped).

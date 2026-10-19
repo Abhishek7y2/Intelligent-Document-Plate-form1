@@ -1,0 +1,61 @@
+{
+  "profile": "document-capacity",
+  "description": "20-page document batch ingestion and async processing capacity (NFR-03 upload ack < 5s, NFR-04 processing within 5 mins)",
+  "concurrency": 10,
+  "durationSeconds": 20.1,
+  "totalRequests": 1582,
+  "successfulRequests": 944,
+  "errorCount": 638,
+  "errorRate": 40.33,
+  "throughputRps": 78.7,
+  "statusCodes": {
+    "200": 524,
+    "201": 420,
+    "403": 222,
+    "409": 293,
+    "422": 123
+  },
+  "overallLatencies": {
+    "count": 1582,
+    "min": 2.56,
+    "max": 906.08,
+    "mean": 16.12,
+    "p50": 6.22,
+    "p90": 25.9,
+    "p95": 62.01,
+    "p99": 154.46
+  },
+  "transactionBreakdown": {
+    "POST /documents/upload (Ack < 5s)": {
+      "count": 531,
+      "min": 2.56,
+      "max": 64.34,
+      "mean": 7.56,
+      "p50": 5.09,
+      "p90": 13.9,
+      "p95": 17.99,
+      "p99": 52.54
+    },
+    "POST /documents/:id/process-ocr (20-page)": {
+      "count": 527,
+      "min": 2.68,
+      "max": 906.08,
+      "mean": 31.69,
+      "p50": 7.79,
+      "p90": 77.4,
+      "p95": 113.45,
+      "p99": 342.23
+    },
+    "GET /search (Metadata & Text)": {
+      "count": 524,
+      "min": 3.15,
+      "max": 76.74,
+      "mean": 9.13,
+      "p50": 6.67,
+      "p90": 16.2,
+      "p95": 20.42,
+      "p99": 54.03
+    }
+  },
+  "timestamp": "2026-10-14T05:08:36.386Z"
+}

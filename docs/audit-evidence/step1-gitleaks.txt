@@ -1,0 +1,4 @@
+$ gitleaks detect
+gitleaks not installed on PATH.
+Status: NOT VERIFIED via gitleaks automated binary.
+Alternative: Repository secrets scanned via ripgrep and git log regex pattern analysis (detailed under Security Review Step 4).

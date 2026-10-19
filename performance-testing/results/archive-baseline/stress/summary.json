@@ -1,0 +1,80 @@
+{
+  "profile": "stress",
+  "description": "Above-peak stress workload (50 VUs) determining degradation points and service recovery",
+  "concurrency": 50,
+  "durationSeconds": 25,
+  "totalRequests": 4434,
+  "successfulRequests": 4261,
+  "errorCount": 173,
+  "errorRate": 3.9,
+  "throughputRps": 177.4,
+  "statusCodes": {
+    "200": 3562,
+    "201": 699,
+    "403": 169,
+    "599": 4
+  },
+  "overallLatencies": {
+    "count": 4434,
+    "min": 2.34,
+    "max": 5730.97,
+    "mean": 198.89,
+    "p50": 121.83,
+    "p90": 242.39,
+    "p95": 408.07,
+    "p99": 5338.5
+  },
+  "transactionBreakdown": {
+    "GET /search (Metadata & Text)": {
+      "count": 908,
+      "min": 2.94,
+      "max": 5727.4,
+      "mean": 216.52,
+      "p50": 122.57,
+      "p90": 252.8,
+      "p95": 451.73,
+      "p99": 5349.94
+    },
+    "GET /documents/:id": {
+      "count": 895,
+      "min": 2.34,
+      "max": 5730.97,
+      "mean": 182.62,
+      "p50": 120.26,
+      "p90": 229.84,
+      "p95": 350.34,
+      "p99": 813.24
+    },
+    "GET /compare?doc1=DOC-10245&doc2=v2": {
+      "count": 887,
+      "min": 2.98,
+      "max": 5729.69,
+      "mean": 203.97,
+      "p50": 121.16,
+      "p90": 247.3,
+      "p95": 408.97,
+      "p99": 5342.25
+    },
+    "POST /qa/query (Grounded AI)": {
+      "count": 876,
+      "min": 3.75,
+      "max": 5724.45,
+      "mean": 190.25,
+      "p50": 124.42,
+      "p90": 250.23,
+      "p95": 404.54,
+      "p99": 806.19
+    },
+    "POST /documents/upload (Ack < 5s)": {
+      "count": 868,
+      "min": 2.93,
+      "max": 5729.79,
+      "mean": 200.77,
+      "p50": 121.12,
+      "p90": 230.15,
+      "p95": 395.92,
+      "p99": 5352.21
+    }
+  },
+  "timestamp": "2026-10-14T05:07:31.100Z"
+}

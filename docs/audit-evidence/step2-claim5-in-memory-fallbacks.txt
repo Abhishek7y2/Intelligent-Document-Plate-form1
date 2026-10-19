@@ -1,0 +1,34 @@
+=== EVIDENCE FOR CLAIM 5: IN-MEMORY FALLBACKS IN PRODUCTION ===
+Claim/Requirement: Search all code for in-memory fallbacks used when Redis, Mongo, S3, ClamAV, or any dependency is unreachable. State whether each can activate in NODE_ENV=production. Any silent fallback that loses data or skips security is a defect.
+
+RESULT: MULTIPLE CRITICAL DEFECTS IDENTIFIED
+
+1. CRITICAL DEFECT: Universal Default `storeMode = 'memory'` across 13 Services
+   - Affected services: IntakeService (line 85), ClassificationService (line 10), ConnectorService (line 23), CompareService (line 49), ExportService (line 48), ReportService (line 42), ExtractionService (line 27), OcrService (line 27), OutboxService (line 19), QaService (line 48), NotificationService, WebhookService, ReviewService.
+   - Activation in NODE_ENV=production: YES (100% active by default!).
+   - Evidence: Each service class initializes `private static storeMode: 'memory' | 'database' = 'memory';`. Search of `backend/src/server.ts`, `backend/src/worker.ts`, and `backend/src/app.ts` reveals ZERO calls to `setStoreMode('database')`.
+   - Impact: In production, the entire system stores documents, extracted metadata, OCR text, outbox events, and user reviews in JavaScript `Map` objects in memory. On process restart or in multi-instance deployments, all state is silently lost.
+
+2. CRITICAL DEFECT: AuditTrailService Silent Memory Storage
+   - File: backend/src/services/audit-trail.service.ts (lines 21, 92, 120, 150)
+   - Code: `private static inMemoryEvents: AuditTrailRecord[] = [];`
+   - Activation in production: YES. All compliance audit logs (login, access, document mutations) are held in memory unless database persistence is explicitly implemented.
+
+3. DEFECT: AiQualityService Silent MongoDB Fallback
+   - File: backend/src/services/ai-quality.service.ts (lines 181-196)
+   - Code: When MongoDB `getMongoDb()` returns null, it logs a warning and stores the evaluation run in `this.inMemoryRuns.unshift(evaluationRecord)`.
+   - Activation in production: YES. If MongoDB is down or unconfigured, evaluation metrics silently divert to volatile RAM.
+
+4. ClamAV Malware Scanner Fallback:
+   - File: backend/src/services/scanner.service.ts (lines 188-193)
+   - Guarded: If `SCANNER_TYPE=mock` is set when `NODE_ENV=production`, it throws `Production security violation: MockMalwareScanner is strictly forbidden in production.`
+   - However, if ClamAV daemon is unreachable, `ClamAvScanner` throws `ScannerUnavailableError`. In `IntakeService.ingestDocument`, this properly fails the ingestion rather than allowing malware through.
+
+5. Object Storage (S3 / MinIO):
+   - File: backend/src/services/storage.service.ts (lines 369-373)
+   - Guarded: `StorageFactory` throws if `STORAGE_DRIVER=memory` in `NODE_ENV=production`.
+   - However, because `IntakeService.storeMode` defaults to `'memory'`, documents metadata and references are still volatile.
+
+6. BullMQ / Redis Queue:
+   - File: backend/src/services/queue.service.ts (lines 43-44, 141-148)
+   - Guarded: Default in non-test environments is `'redis'`. If Redis connection fails, operations throw `Failed to enqueue ... job to Redis`. It does not silently fall back to RAM in production unless `QueueService.setMode('memory')` is called.

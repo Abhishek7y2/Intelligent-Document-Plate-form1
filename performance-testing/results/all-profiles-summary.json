@@ -1,0 +1,695 @@
+[
+  {
+    "profile": "smoke",
+    "description": "1-2 Virtual Users, validating connectivity, authentication, health checks, and assertions",
+    "concurrency": 2,
+    "durationSeconds": 10,
+    "totalRequests": 175,
+    "successfulRequests": 175,
+    "expectedDenials": 0,
+    "unexpectedFailures": 0,
+    "genuineErrorRate": 0,
+    "rawFailureRate": 0,
+    "throughputRps": 17.4,
+    "statusCodes": {
+      "200": 175
+    },
+    "overallLatencies": {
+      "count": 175,
+      "min": 1.92,
+      "max": 23.33,
+      "mean": 5.99,
+      "p50": 5.24,
+      "p90": 9.98,
+      "p95": 12.08,
+      "p99": 22.19
+    },
+    "transactionBreakdown": {
+      "GET /health": {
+        "count": 30,
+        "min": 1.92,
+        "max": 6.46,
+        "mean": 3.16,
+        "p50": 2.27,
+        "p90": 5.62,
+        "p95": 5.71,
+        "p99": 6.46
+      },
+      "GET /ready": {
+        "count": 29,
+        "min": 4.22,
+        "max": 23.33,
+        "mean": 7.27,
+        "p50": 6.04,
+        "p90": 10.32,
+        "p95": 14.98,
+        "p99": 23.33
+      },
+      "GET /search (Metadata & Text)": {
+        "count": 29,
+        "min": 3.55,
+        "max": 11.91,
+        "mean": 6.36,
+        "p50": 6.45,
+        "p90": 10.71,
+        "p95": 11.31,
+        "p99": 11.91
+      },
+      "GET /documents/:id": {
+        "count": 29,
+        "min": 3.08,
+        "max": 12.13,
+        "mean": 5,
+        "p50": 3.86,
+        "p90": 9.94,
+        "p95": 10.41,
+        "p99": 12.13
+      },
+      "GET /compare?doc1=DOC-10245&doc2=v2": {
+        "count": 29,
+        "min": 5.24,
+        "max": 22.19,
+        "mean": 9.48,
+        "p50": 9.37,
+        "p90": 14.58,
+        "p95": 16.02,
+        "p99": 22.19
+      },
+      "GET /review/queue": {
+        "count": 29,
+        "min": 3.1,
+        "max": 6.68,
+        "mean": 4.75,
+        "p50": 4.52,
+        "p90": 6.45,
+        "p95": 6.45,
+        "p99": 6.68
+      }
+    },
+    "memoryTelemetry": {
+      "initialHeapUsedMb": 8.4,
+      "finalHeapUsedMb": 9.7,
+      "finalRssMb": 49.6
+    },
+    "timestamp": "2026-10-14T05:54:32.366Z"
+  },
+  {
+    "profile": "baseline",
+    "description": "Low concurrency (5 VUs) establishing normal response times, throughput, and error rate",
+    "concurrency": 5,
+    "durationSeconds": 15,
+    "totalRequests": 446,
+    "successfulRequests": 446,
+    "expectedDenials": 0,
+    "unexpectedFailures": 0,
+    "genuineErrorRate": 0,
+    "rawFailureRate": 0,
+    "throughputRps": 29.6,
+    "statusCodes": {
+      "200": 446
+    },
+    "overallLatencies": {
+      "count": 446,
+      "min": 2.19,
+      "max": 15.95,
+      "mean": 5.5,
+      "p50": 5.13,
+      "p90": 8.36,
+      "p95": 9.67,
+      "p99": 13.98
+    },
+    "transactionBreakdown": {
+      "GET /search (Metadata & Text)": {
+        "count": 65,
+        "min": 2.97,
+        "max": 12.79,
+        "mean": 4.98,
+        "p50": 4.1,
+        "p90": 7.78,
+        "p95": 9.79,
+        "p99": 12.79
+      },
+      "GET /documents/:id": {
+        "count": 65,
+        "min": 2.78,
+        "max": 8.43,
+        "mean": 4.29,
+        "p50": 3.68,
+        "p90": 6.2,
+        "p95": 6.55,
+        "p99": 8.43
+      },
+      "GET /compare?doc1=DOC-10245&doc2=v2": {
+        "count": 65,
+        "min": 4.66,
+        "max": 15.57,
+        "mean": 7.52,
+        "p50": 7.42,
+        "p90": 10.03,
+        "p95": 12.46,
+        "p99": 15.57
+      },
+      "POST /qa/query (Grounded AI)": {
+        "count": 63,
+        "min": 3.5,
+        "max": 14.69,
+        "mean": 5.88,
+        "p50": 5.33,
+        "p90": 7.75,
+        "p95": 10.21,
+        "p99": 14.69
+      },
+      "GET /review/queue": {
+        "count": 63,
+        "min": 2.19,
+        "max": 10.5,
+        "mean": 4.21,
+        "p50": 3.52,
+        "p90": 6.08,
+        "p95": 6.64,
+        "p99": 10.5
+      },
+      "GET /notifications": {
+        "count": 63,
+        "min": 2.98,
+        "max": 9.34,
+        "mean": 4.53,
+        "p50": 3.85,
+        "p90": 6.69,
+        "p95": 7.12,
+        "p99": 9.34
+      },
+      "GET /reports/governance": {
+        "count": 62,
+        "min": 3.44,
+        "max": 15.95,
+        "mean": 7.09,
+        "p50": 6.76,
+        "p90": 9.44,
+        "p95": 11.89,
+        "p99": 15.95
+      }
+    },
+    "memoryTelemetry": {
+      "initialHeapUsedMb": 9.9,
+      "finalHeapUsedMb": 17.7,
+      "finalRssMb": 65.1
+    },
+    "timestamp": "2026-10-14T05:54:47.419Z"
+  },
+  {
+    "profile": "normal-load",
+    "description": "Expected normal concurrent load (15 VUs) with realistic think time and full read/write workflow mix",
+    "concurrency": 15,
+    "durationSeconds": 20.2,
+    "totalRequests": 1769,
+    "successfulRequests": 1721,
+    "expectedDenials": 48,
+    "unexpectedFailures": 0,
+    "genuineErrorRate": 0,
+    "rawFailureRate": 2.71,
+    "throughputRps": 87.8,
+    "statusCodes": {
+      "200": 1518,
+      "201": 203,
+      "403": 48
+    },
+    "overallLatencies": {
+      "count": 1769,
+      "min": 2.09,
+      "max": 33.84,
+      "mean": 5.85,
+      "p50": 4.85,
+      "p90": 10.02,
+      "p95": 12.6,
+      "p99": 21.69
+    },
+    "transactionBreakdown": {
+      "GET /search (Metadata & Text)": {
+        "count": 259,
+        "min": 2.33,
+        "max": 21.81,
+        "mean": 5.03,
+        "p50": 4.13,
+        "p90": 7.62,
+        "p95": 9.79,
+        "p99": 20.11
+      },
+      "GET /documents/:id": {
+        "count": 257,
+        "min": 2.1,
+        "max": 14.13,
+        "mean": 4.66,
+        "p50": 3.62,
+        "p90": 7.49,
+        "p95": 10.16,
+        "p99": 13.52
+      },
+      "GET /compare?doc1=DOC-10245&doc2=v2": {
+        "count": 255,
+        "min": 4.07,
+        "max": 33.84,
+        "mean": 10.22,
+        "p50": 8.68,
+        "p90": 18.57,
+        "p95": 23.34,
+        "p99": 31.12
+      },
+      "POST /qa/query (Grounded AI)": {
+        "count": 254,
+        "min": 3.13,
+        "max": 16.9,
+        "mean": 6,
+        "p50": 5.22,
+        "p90": 9.2,
+        "p95": 11.69,
+        "p99": 14.93
+      },
+      "POST /documents/upload (Ack < 5s)": {
+        "count": 251,
+        "min": 2.63,
+        "max": 23.27,
+        "mean": 5.78,
+        "p50": 4.94,
+        "p90": 8.95,
+        "p95": 12.88,
+        "p99": 16.09
+      },
+      "GET /review/queue": {
+        "count": 248,
+        "min": 2.21,
+        "max": 14.04,
+        "mean": 4.57,
+        "p50": 3.62,
+        "p90": 7.28,
+        "p95": 10.71,
+        "p99": 12.18
+      },
+      "GET /notifications": {
+        "count": 245,
+        "min": 2.09,
+        "max": 13.62,
+        "mean": 4.66,
+        "p50": 4,
+        "p90": 7.42,
+        "p95": 8.65,
+        "p99": 12.44
+      }
+    },
+    "memoryTelemetry": {
+      "initialHeapUsedMb": 17.9,
+      "finalHeapUsedMb": 15.7,
+      "finalRssMb": 84.9
+    },
+    "timestamp": "2026-10-14T05:55:07.579Z"
+  },
+  {
+    "profile": "peak-load",
+    "description": "Simulated peak workload (30 VUs) measuring queue capacity, p95 latency, and worker throughput",
+    "concurrency": 30,
+    "durationSeconds": 20.1,
+    "totalRequests": 4509,
+    "successfulRequests": 4335,
+    "expectedDenials": 174,
+    "unexpectedFailures": 0,
+    "genuineErrorRate": 0,
+    "rawFailureRate": 3.86,
+    "throughputRps": 224.2,
+    "statusCodes": {
+      "200": 3623,
+      "201": 712,
+      "403": 174
+    },
+    "overallLatencies": {
+      "count": 4509,
+      "min": 2.02,
+      "max": 252.13,
+      "mean": 18.23,
+      "p50": 11.35,
+      "p90": 39.84,
+      "p95": 60.57,
+      "p99": 103.45
+    },
+    "transactionBreakdown": {
+      "GET /search (Metadata & Text)": {
+        "count": 914,
+        "min": 2.44,
+        "max": 115.67,
+        "mean": 13.87,
+        "p50": 9.47,
+        "p90": 26.72,
+        "p95": 39.61,
+        "p99": 88.42
+      },
+      "GET /documents/:id": {
+        "count": 908,
+        "min": 2.02,
+        "max": 120.07,
+        "mean": 13.21,
+        "p50": 7.36,
+        "p90": 27.4,
+        "p95": 39.74,
+        "p99": 94.95
+      },
+      "GET /compare?doc1=DOC-10245&doc2=v2": {
+        "count": 907,
+        "min": 4.06,
+        "max": 252.13,
+        "mean": 35.25,
+        "p50": 25.9,
+        "p90": 70.6,
+        "p95": 98.44,
+        "p99": 176.8
+      },
+      "POST /qa/query (Grounded AI)": {
+        "count": 894,
+        "min": 3.61,
+        "max": 124.18,
+        "mean": 15.31,
+        "p50": 11.53,
+        "p90": 26.61,
+        "p95": 36.19,
+        "p99": 85.63
+      },
+      "POST /documents/upload (Ack < 5s)": {
+        "count": 886,
+        "min": 2.68,
+        "max": 89.64,
+        "mean": 13.4,
+        "p50": 8.19,
+        "p90": 27.08,
+        "p95": 40.83,
+        "p99": 78.92
+      }
+    },
+    "memoryTelemetry": {
+      "initialHeapUsedMb": 16.7,
+      "finalHeapUsedMb": 19.3,
+      "finalRssMb": 87.6
+    },
+    "timestamp": "2026-10-14T05:55:27.700Z"
+  },
+  {
+    "profile": "stress",
+    "description": "Above-peak stress workload (50 VUs) determining degradation points and service recovery",
+    "concurrency": 50,
+    "durationSeconds": 20.1,
+    "totalRequests": 4492,
+    "successfulRequests": 4320,
+    "expectedDenials": 172,
+    "unexpectedFailures": 0,
+    "genuineErrorRate": 0,
+    "rawFailureRate": 3.83,
+    "throughputRps": 223.7,
+    "statusCodes": {
+      "200": 3616,
+      "201": 704,
+      "403": 172
+    },
+    "overallLatencies": {
+      "count": 4492,
+      "min": 2.47,
+      "max": 777.34,
+      "mean": 143.76,
+      "p50": 114.35,
+      "p90": 277.89,
+      "p95": 314.93,
+      "p99": 555.49
+    },
+    "transactionBreakdown": {
+      "GET /search (Metadata & Text)": {
+        "count": 924,
+        "min": 3.08,
+        "max": 566.46,
+        "mean": 107.3,
+        "p50": 104.74,
+        "p90": 154.78,
+        "p95": 188.84,
+        "p99": 271.71
+      },
+      "GET /documents/:id": {
+        "count": 910,
+        "min": 2.47,
+        "max": 558.2,
+        "mean": 112.84,
+        "p50": 106.09,
+        "p90": 163.19,
+        "p95": 217.87,
+        "p99": 548.08
+      },
+      "GET /compare?doc1=DOC-10245&doc2=v2": {
+        "count": 902,
+        "min": 4.04,
+        "max": 777.34,
+        "mean": 277.22,
+        "p50": 273.66,
+        "p90": 407.81,
+        "p95": 503.38,
+        "p99": 754.55
+      },
+      "POST /qa/query (Grounded AI)": {
+        "count": 880,
+        "min": 3.83,
+        "max": 556.49,
+        "mean": 108.59,
+        "p50": 105.99,
+        "p90": 153.32,
+        "p95": 186.55,
+        "p99": 265.38
+      },
+      "POST /documents/upload (Ack < 5s)": {
+        "count": 876,
+        "min": 2.71,
+        "max": 583.52,
+        "mean": 112.23,
+        "p50": 108.11,
+        "p90": 157.81,
+        "p95": 189,
+        "p99": 272.74
+      }
+    },
+    "memoryTelemetry": {
+      "initialHeapUsedMb": 22.2,
+      "finalHeapUsedMb": 25.4,
+      "finalRssMb": 114.6
+    },
+    "timestamp": "2026-10-14T05:55:47.793Z"
+  },
+  {
+    "profile": "spike",
+    "description": "Sudden spike of 60 VUs with rapid 1s ramp-up to evaluate surge handling and queue draining",
+    "concurrency": 60,
+    "durationSeconds": 15.1,
+    "totalRequests": 4429,
+    "successfulRequests": 4429,
+    "expectedDenials": 0,
+    "unexpectedFailures": 0,
+    "genuineErrorRate": 0,
+    "rawFailureRate": 0,
+    "throughputRps": 293.1,
+    "statusCodes": {
+      "200": 4429
+    },
+    "overallLatencies": {
+      "count": 4429,
+      "min": 2.41,
+      "max": 442.49,
+      "mean": 145.26,
+      "p50": 113.21,
+      "p90": 273.45,
+      "p95": 305.64,
+      "p99": 363.78
+    },
+    "transactionBreakdown": {
+      "GET /search (Metadata & Text)": {
+        "count": 1498,
+        "min": 3.33,
+        "max": 205.74,
+        "mean": 95.93,
+        "p50": 94.08,
+        "p90": 141.95,
+        "p95": 158.6,
+        "p99": 191.67
+      },
+      "GET /documents/:id": {
+        "count": 1466,
+        "min": 2.41,
+        "max": 207.18,
+        "mean": 95.55,
+        "p50": 93.63,
+        "p90": 139.32,
+        "p95": 150.27,
+        "p99": 179.53
+      },
+      "GET /compare?doc1=DOC-10245&doc2=v2": {
+        "count": 1465,
+        "min": 4.53,
+        "max": 442.49,
+        "mean": 245.46,
+        "p50": 241.58,
+        "p90": 321.89,
+        "p95": 352.63,
+        "p99": 387.65
+      }
+    },
+    "memoryTelemetry": {
+      "initialHeapUsedMb": 28.1,
+      "finalHeapUsedMb": 17.8,
+      "finalRssMb": 117.7
+    },
+    "timestamp": "2026-10-14T05:56:02.914Z"
+  },
+  {
+    "profile": "endurance",
+    "description": "Sustained steady load (10 VUs) over 60 seconds to verify memory stability, connection pool health, and latency drift absence",
+    "concurrency": 10,
+    "durationSeconds": 60.1,
+    "totalRequests": 5095,
+    "successfulRequests": 4893,
+    "expectedDenials": 202,
+    "unexpectedFailures": 0,
+    "genuineErrorRate": 0,
+    "rawFailureRate": 3.96,
+    "throughputRps": 84.8,
+    "statusCodes": {
+      "200": 4080,
+      "201": 813,
+      "403": 202
+    },
+    "overallLatencies": {
+      "count": 5095,
+      "min": 1.88,
+      "max": 2820.24,
+      "mean": 12.66,
+      "p50": 5.77,
+      "p90": 12.96,
+      "p95": 16.55,
+      "p99": 26.63
+    },
+    "transactionBreakdown": {
+      "GET /search (Metadata & Text)": {
+        "count": 1022,
+        "min": 2.75,
+        "max": 2761.28,
+        "mean": 9.22,
+        "p50": 5.69,
+        "p90": 10.48,
+        "p95": 12.39,
+        "p99": 21.52
+      },
+      "GET /documents/:id": {
+        "count": 1020,
+        "min": 1.88,
+        "max": 2772.38,
+        "mean": 12.82,
+        "p50": 3.76,
+        "p90": 8.29,
+        "p95": 12.36,
+        "p99": 18.13
+      },
+      "GET /compare?doc1=DOC-10245&doc2=v2": {
+        "count": 1020,
+        "min": 3.57,
+        "max": 2820.24,
+        "mean": 19.56,
+        "p50": 9.71,
+        "p90": 20.02,
+        "p95": 24.71,
+        "p99": 44.62
+      },
+      "POST /qa/query (Grounded AI)": {
+        "count": 1018,
+        "min": 4.03,
+        "max": 28.37,
+        "mean": 8.65,
+        "p50": 7.79,
+        "p90": 13.44,
+        "p95": 16.09,
+        "p99": 21.72
+      },
+      "POST /documents/upload (Ack < 5s)": {
+        "count": 1015,
+        "min": 2.46,
+        "max": 2795.36,
+        "mean": 13.06,
+        "p50": 4.13,
+        "p90": 7.62,
+        "p95": 9.7,
+        "p99": 16
+      }
+    },
+    "memoryTelemetry": {
+      "initialHeapUsedMb": 20.5,
+      "finalHeapUsedMb": 27,
+      "finalRssMb": 117.1
+    },
+    "timestamp": "2026-10-14T05:57:03.019Z"
+  },
+  {
+    "profile": "document-capacity",
+    "description": "20-page document batch ingestion and async processing capacity (NFR-03 upload ack < 5s, NFR-04 processing within 5 mins)",
+    "concurrency": 10,
+    "durationSeconds": 20.5,
+    "totalRequests": 1575,
+    "successfulRequests": 1345,
+    "expectedDenials": 115,
+    "unexpectedFailures": 115,
+    "genuineErrorRate": 7.88,
+    "rawFailureRate": 39.81,
+    "throughputRps": 76.9,
+    "statusCodes": {
+      "200": 535,
+      "201": 413,
+      "403": 230,
+      "409": 397
+    },
+    "overallLatencies": {
+      "count": 1575,
+      "min": 2.28,
+      "max": 1995.57,
+      "mean": 18.07,
+      "p50": 4.61,
+      "p90": 8.3,
+      "p95": 9.82,
+      "p99": 18.07
+    },
+    "transactionBreakdown": {
+      "POST /documents/upload (Ack < 5s)": {
+        "count": 528,
+        "min": 2.28,
+        "max": 17.94,
+        "mean": 5.09,
+        "p50": 4.37,
+        "p90": 7.72,
+        "p95": 8.93,
+        "p99": 12.42
+      },
+      "POST /documents/:id/process-ocr (20-page)": {
+        "count": 526,
+        "min": 2.66,
+        "max": 1995.57,
+        "mean": 42.94,
+        "p50": 4.13,
+        "p90": 7.97,
+        "p95": 9.6,
+        "p99": 1423.59
+      },
+      "GET /search (Metadata & Text)": {
+        "count": 521,
+        "min": 3.53,
+        "max": 18.07,
+        "mean": 6.11,
+        "p50": 5.29,
+        "p90": 9.4,
+        "p95": 10.62,
+        "p99": 14.25
+      }
+    },
+    "memoryTelemetry": {
+      "initialHeapUsedMb": 19.4,
+      "finalHeapUsedMb": 18.7,
+      "finalRssMb": 118.7
+    },
+    "timestamp": "2026-10-14T05:57:23.505Z"
+  }
+]
